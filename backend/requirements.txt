@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+python-dotenv
+sqlalchemy
+psycopg[binary]
+pluggy
+# Auth (installed now, wired in a later step — see app/auth_notes.md)
+fastapi-users[sqlalchemy]
+alembic
