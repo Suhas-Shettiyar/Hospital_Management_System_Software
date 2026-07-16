@@ -25,9 +25,11 @@ backend/
     config.py          # settings from .env
     database.py        # SQLAlchemy engine/session (lazy connect)
     api/health.py      # /api/health and /api/health/db
-    modules/           # optional packages (departments) live here
+    core/              # always-on foundation: auth, patients, audit, billing, module_registry
+    modules/           # department packages (opd, lab, pharmacy, ipd, ...) live here
       example_hello/   # example package showing the router pattern
-    auth_notes.md      # how to add fastapi-users auth later
+    auth_notes.md      # how custom JWT auth gets wired in (see docs/decisions/)
+  alembic/             # database migrations
   requirements.txt
   .env.example
 ```
