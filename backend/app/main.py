@@ -11,24 +11,46 @@ from sqlalchemy import text
 from app.config import settings
 from app.database import engine, SessionLocal
 from app.core.module_registry.seed import seed_default_modules
+from app.core.plugins.loader import (
+    build_plugin_manager,
+    discover_modules,
+    get_enabled_module_ids,
+    resolve_install_order,
+)
 from app.core.auth.router import router as auth_router
 from app.api.health import router as health_router
-from app.modules.example_hello.router import router as example_hello_router
+
+# Discovery + registration + dependency resolution is pure, in-memory, no
+# database - runs once at import time. A bad manifest, cycle, or duplicate
+# id is a real code/config bug and should crash startup loudly, not be
+# swallowed.
+_discovered = discover_modules(build_plugin_manager())
+_install_order = resolve_install_order(_discovered)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Seed module_registry with any known packages not yet in the table.
-    # Best-effort: the app should still start even if the DB isn't up yet,
+    # Seed module_registry with any known packages not yet in the table, and
+    # mount only the ones enabled in the DB. Best-effort: the app should
+    # still start even if the DB isn't up yet (core routes still work),
     # consistent with the rest of the app's lazy-DB-connection approach.
+    # Toggling a module's enabled flag takes effect on the next restart, not
+    # instantly - there is no live hot-reload of the route table.
+    enabled_ids: set[str] = set()
     try:
         db = SessionLocal()
         try:
-            seed_default_modules(db)
+            seed_default_modules(db, discovered=_discovered)
+            enabled_ids = get_enabled_module_ids(db)
         finally:
             db.close()
     except Exception as exc:  # noqa: BLE001 - don't block startup on a DB hiccup
-        print(f"[startup] module_registry seeding skipped: {exc}")
+        print(f"[startup] module_registry unreachable, mounting no optional packages: {exc}")
+
+    for module_id in _install_order:
+        if module_id in enabled_ids:
+            app.include_router(_discovered[module_id].router, prefix="/api")
+            print(f"[startup] mounted package: {module_id}")
     yield
 
 
@@ -44,15 +66,12 @@ app.add_middleware(
 )
 
 # All API routes live under /api (the frontend proxies /api -> this backend).
+# Core (always-on, never toggled): health + auth.
 app.include_router(health_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 
-# --- Package mounting -------------------------------------------------------
-# Each optional package is included here. In the full build, an automatic
-# loader reads which packages are enabled and mounts them. For the starter we
-# mount the example module directly so you can see the pattern.
-app.include_router(example_hello_router, prefix="/api")
-# ---------------------------------------------------------------------------
+# Optional department packages (opd, lab, pharmacy, example_hello, ...) are
+# mounted by the loader inside lifespan() above, based on module_registry.
 
 
 @app.get("/")

@@ -14,6 +14,43 @@ Every session should start by reading the latest entries here, and end by adding
 
 ## Log
 
+### 2026-07-16 (later again) — Stage 3 complete: real pluggy-based plugin loader
+Planned via plan mode (new plan, previous one overwritten). Two design decisions made and documented: (1) enable/disable takes effect on **restart, not instantly** — the loader decides what to mount once at startup by reading `module_registry`, no live hot-toggle/route-hiding; (2) package discovery stays a **hardcoded list** for now (`KNOWN_PACKAGE_MODULES` in `loader.py`), not real Python `entry_points` — those need separately-installable packages, appropriate for the much-later Module Store/Gitea phase, not while everything lives in one repo.
+
+**Built, new `app/core/plugins/` package:**
+- `hookspecs.py` — the pluggy contract every optional department package implements: `module_manifest()` and `module_router()`.
+- `loader.py` — `build_plugin_manager()` (registers known packages), `discover_modules()` (calls hooks, pairs manifest+router, rejects duplicate ids), `resolve_install_order()` (topological sort over each manifest's `depends_on`, Kahn's algorithm — raises loudly on an unknown dependency or a cycle), `get_enabled_module_ids()` (queries `module_registry`).
+- `app/modules/example_hello/plugin.py` — the one real package converted to implement the hook contract (router.py/MODULE_MANIFEST untouched).
+- `seed.py` updated to call the loader's own `discover_modules()` instead of keeping its own separate hardcoded manifest list — now exactly one list of known packages exists in the whole codebase.
+- `main.py` restructured: discovery/registration/dependency-resolution runs once at import time (pure, in-memory, crashes loudly on a real bug); checking *which* modules are enabled (needs the DB) happens inside the existing `lifespan`, before `yield`, reusing the same session already used for seeding. The old static `include_router(example_hello_router)` line is gone — `example_hello` is now only mounted if `module_registry.enabled` is true at startup.
+- 4 new unit tests (`backend/tests/core/plugins/test_loader.py`) for `resolve_install_order`: linear chain, deterministic ordering of independents, unknown-dependency error, cycle error — all passing. (No real multi-package dependencies exist yet to exercise this for real, but the mechanism is correct and ready.)
+
+**Verified live, full checklist:**
+1. Core routes (`/`, `/health`, `/api/health`, `/api/auth/register`) all unaffected by the restructuring.
+2. `example_hello` disabled by default (unchanged from Stage 1 seeding) → `GET /api/hello` → `404`.
+3. `UPDATE module_registry SET enabled = true` + restart → `GET /api/hello` → `200`, log shows `[startup] mounted package: example_hello`.
+4. Toggled back to `false` + restart → `404` again.
+5. All 4 new pytest tests pass.
+
+This is the concrete "a trivial 'hello' package installs, enables, and disables end-to-end" proof the Technical Roadmap's Phase 1 exit criterion asks for — with the documented restart-to-apply tradeoff.
+
+**Not committed yet** — need to review `git status` and confirm before staging/pushing.
+
+**Next up (per the plan, Stage 4):** frontend Vite Module Federation (loading modules at runtime instead of static imports) — the last piece of the "Core Platform + Package Framework" phase. After that, real department packages (opd, lab, pharmacy, ipd, appointments) can start getting built using this loader. The frontend's fake `AuthProvider.tsx` login stub also still needs wiring to the real `/api/auth/*` endpoints from Stage 2.
+
+---
+
+### 2026-07-16 (yet later) — Real Brevo email tested live; Gmail deferral noted (not a bug)
+User signed up for Brevo, verified sender `suhas333suhas@gmail.com`, generated an API key, and gave it to me. Added both to `backend/.env` (never committed - gitignored). Restarted the backend and registered/resent a real verification email to that address.
+
+**Diagnosed via Brevo's own delivery-events API** (`GET /v3/smtp/statistics/events`) rather than guessing: Brevo *did* accept and attempt delivery, but Gmail returned a `421-4.7.28` deferral - "Gmail has detected an unusual rate of mail originating from your SPF domain [Brevo's shared sending domain]... temporarily rate limited." This is standard Gmail anti-spam caution for a brand-new/unrecognized sending source (Brevo's shared `brevosend.com` subdomain, since no custom domain is verified yet) - not a bug in our code. Our email.py/router.py logic is already proven fully correct end-to-end from Stage 2's controlled-token testing.
+
+**User's decision: wait and move on** - Brevo auto-retries deferred sends as reputation warms up; this doesn't block any further work. Noted for later (before real deployment): verifying a custom domain with proper SPF/DKIM in Brevo would fix this permanently, but isn't needed for continued development.
+
+**Test data note:** a third test user (`suhas333suhas@gmail.com`, role=patient, user_id=3) exists in the local dev DB from this test - harmless, left in place (same audit_log-FK-blocks-deletion situation as before).
+
+---
+
 ### 2026-07-16 (even later) — Stage 2 complete: real JWT auth endpoints
 Planned via plan mode again (previous plan file overwritten - this was a genuinely new task). Confirmed with user: real email via **Brevo** (free transactional API, not Gmail, not deferred), single access token ~10h expiry (no refresh tokens), standard Bearer-JWT-in-header auth.
 
