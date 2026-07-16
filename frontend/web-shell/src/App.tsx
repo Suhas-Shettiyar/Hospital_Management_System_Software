@@ -4,9 +4,11 @@ import { App as AntApp } from "antd";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import { AuthProvider } from "./features/auth/AuthProvider";
 import { queryClient } from "./lib/queryClient";
-import { router } from "./app/router";
+import type { AppRouter } from "./app/router";
 
-export default function App() {
+/** router is a prop, not an internal import: it must be built AFTER modules
+ * (including async-loaded remotes) are registered - see bootstrap.tsx. */
+export default function App({ router }: { router: AppRouter }) {
   return (
     <ThemeProvider>
       <AntApp>
