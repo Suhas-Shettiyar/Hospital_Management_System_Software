@@ -11,6 +11,7 @@ from sqlalchemy import text
 from app.config import settings
 from app.database import engine, SessionLocal
 from app.core.module_registry.seed import seed_default_modules
+from app.core.auth.router import router as auth_router
 from app.api.health import router as health_router
 from app.modules.example_hello.router import router as example_hello_router
 
@@ -44,6 +45,7 @@ app.add_middleware(
 
 # All API routes live under /api (the frontend proxies /api -> this backend).
 app.include_router(health_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
 
 # --- Package mounting -------------------------------------------------------
 # Each optional package is included here. In the full build, an automatic
