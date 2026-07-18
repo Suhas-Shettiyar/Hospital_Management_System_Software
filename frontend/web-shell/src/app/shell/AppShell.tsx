@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Layout } from "antd";
+import { Layout, Spin } from "antd";
 import { Outlet, Navigate, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
@@ -21,8 +21,18 @@ export default function AppShell() {
 }
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const location = useLocation();
+  // Wait for the initial session-restore check (stored token -> /api/auth/me)
+  // before deciding to redirect - otherwise a valid refreshed session would
+  // flash to /login and bounce back once the check resolves.
+  if (isLoading) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   return <>{children}</>;
 }

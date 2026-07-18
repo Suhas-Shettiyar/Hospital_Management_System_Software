@@ -14,6 +14,17 @@ Every session should start by reading the latest entries here, and end by adding
 
 ## Log
 
+### 2026-07-18 — Real login wired into the frontend
+Planned via plan mode. Key decisions: token stored in `localStorage` (not memory-only) since the backend's ~10h access token is explicitly designed to survive a page refresh/tab close for a full shift; session restored on page load via `GET /api/auth/me` (never trust a locally-decoded token), with an `isLoading` gate on `ProtectedRoute` so a valid refreshed session doesn't flash to `/login` and bounce back; the shared `lib/api.ts` fetch helper now attaches `Authorization: Bearer <token>` automatically whenever one is stored, so future protected endpoints work without redoing this wiring.
+
+**Built:** `lib/authToken.ts` (localStorage wrapper), `features/auth/authApi.ts` (`login`/`me`, surfaces the backend's real error `detail` instead of a generic message), rewrote `AuthProvider.tsx` (real `User` shape matching backend's `UserOut`, real login/logout, session restore), updated `LoginPage.tsx` (username field → email, removed the now-false "any password works" hint), `AppShell.tsx`'s `ProtectedRoute` (loading gate), `Topbar.tsx` (`displayName` → `name`).
+
+**Verified live in browser** (Playwright again): registered a real test account via curl, then through the actual UI: wrong password → real backend error toast "Incorrect email or password" (confirmed via network response body, not just visually); correct login → redirected to dashboard, Topbar showed the real name ("Login Wire Test") and role ("doctor") from the database, not fake data; refreshed the page → session persisted (no bounce to login); logged out → redirected to login; refreshed again → correctly stayed on login (token actually cleared); confirmed via network log that `/api/auth/me` requests carried the `Authorization` header.
+
+**Out of scope, not built:** registration/signup page, password-reset/email-verification frontend pages (backend endpoints exist from Stage 2, no UI yet).
+
+---
+
 ### 2026-07-16 (final, this session) — Stage 4 complete: frontend Module Federation — Phase 1 finished
 Planned via plan mode. **Key deviation from the roadmap doc, with reasoning:** used `@module-federation/vite` instead of the roadmap-named `@originjs/vite-plugin-federation` — the latter hasn't released in over a year while this project already runs a newer Vite; the former is the official plugin "recommended by Vite and VoidZero," updated the day before this work. Verified its core API against docs before committing to the plan.
 
