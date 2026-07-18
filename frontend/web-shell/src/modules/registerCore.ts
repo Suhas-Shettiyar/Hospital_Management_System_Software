@@ -1,5 +1,6 @@
 import { registerModule } from "../app/moduleRegistry";
 import { dashboardModule } from "../features/dashboard/module";
+import { patientsModule } from "../features/patients/module";
 
 /**
  * Register the modules that ship with the core. As you build department
@@ -8,4 +9,5 @@ import { dashboardModule } from "../features/dashboard/module";
  */
 export function registerCoreModules() {
   registerModule(dashboardModule);
+  registerModule(patientsModule);
 }
