@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { ConfigProvider } from "antd";
-import { brand, darkTheme, lightTheme } from "./tokens";
+import { brand, darkTheme, gray, lightTheme, shadow } from "./tokens";
 
 type Mode = "light" | "dark";
 interface ThemeCtx { mode: Mode; toggle: () => void; setMode: (m: Mode) => void; }
@@ -23,12 +23,42 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   };
   const toggle = () => setMode(mode === "light" ? "dark" : "light");
 
-  // Expose brand colors + mode as CSS variables for our own components.
+  // Expose brand colors, shadows, gray scale + mode as CSS variables so our
+  // own (non-antd) components — including the OPD remote — can theme
+  // without duplicating light/dark logic.
   useEffect(() => {
     const root = document.documentElement;
-    root.style.setProperty("--brand-primary", mode === "dark" ? brand.primaryDark : brand.primary);
-    root.style.setProperty("--brand-accent", brand.accent);
-    root.style.setProperty("--brand-accent-soft", brand.accentSoft);
+    const isDark = mode === "dark";
+    root.style.setProperty("--brand-primary", isDark ? brand.primaryDark : brand.primary);
+    root.style.setProperty("--brand-primary-hover", isDark ? brand.primaryDarkHover : brand.primaryHover);
+    root.style.setProperty("--brand-accent", isDark ? brand.accentDark : brand.accent);
+    root.style.setProperty("--brand-accent-dark", brand.accentDark);
+    root.style.setProperty("--brand-accent-soft", isDark ? brand.accentSoftDark : brand.accentSoft);
+    root.style.setProperty(
+      "--brand-glow",
+      isDark
+        ? `radial-gradient(circle at 30% 30%, ${brand.primaryDarkHover}, ${brand.primaryDark})`
+        : `radial-gradient(circle at 30% 30%, ${brand.primaryHover}, ${brand.primary})`
+    );
+    root.style.setProperty("--success-bg", isDark ? brand.successSoftDark : brand.successSoft);
+    root.style.setProperty("--warning-bg", isDark ? brand.warningSoftDark : brand.warningSoft);
+    root.style.setProperty("--info-color", isDark ? brand.infoDark : brand.info);
+    // Fixed deep Pine Tree for large solid-fill bands that hold white text
+    // (sidebar, landing hero/closing, login modal) — deliberately NOT
+    // mode-dependent, since brand.primary itself stays a lighter usable
+    // mid-tone for buttons and icons.
+    root.style.setProperty("--brand-surface-fill", brand.surfaceFill);
+
+    const s = isDark ? shadow.dark : shadow.light;
+    root.style.setProperty("--shadow-xs", s.xs);
+    root.style.setProperty("--shadow-sm", s.sm);
+    root.style.setProperty("--shadow-md", s.md);
+    root.style.setProperty("--shadow-lg", s.lg);
+
+    const g = isDark ? gray.dark : gray.light;
+    const steps = [50, 100, 200, 300, 400, 500, 600, 700, 900];
+    g.forEach((value, i) => root.style.setProperty(`--gray-${steps[i]}`, value));
+
     root.dataset.theme = mode;
     root.style.colorScheme = mode;
   }, [mode]);
