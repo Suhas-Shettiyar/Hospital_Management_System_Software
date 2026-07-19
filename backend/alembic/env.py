@@ -13,6 +13,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.config import settings  # noqa: E402
 from app.database import Base  # noqa: E402
 import app.core  # noqa: E402,F401 - side effect: registers all core models on Base.metadata
+# Department packages aren't auto-discovered here (KNOWN_PACKAGE_MODULES in
+# app.core.plugins.loader is the runtime discovery list) - each package
+# that adds models needs an explicit import added here too, same explicit-
+# list philosophy as everywhere else in this plugin system.
+import app.modules.opd.models  # noqa: E402,F401
+import app.modules.lab.models  # noqa: E402,F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

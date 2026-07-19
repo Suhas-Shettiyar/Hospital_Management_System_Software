@@ -27,6 +27,12 @@ export default defineConfig({
           entry: "http://localhost:5175/remoteEntry.js",
           entryGlobalName: "opd_remote",
         },
+        lab_remote: {
+          type: "module",
+          name: "lab_remote",
+          entry: "http://localhost:5176/remoteEntry.js",
+          entryGlobalName: "lab_remote",
+        },
       },
       shared: {
         react: { singleton: true, requiredVersion: "^19.1.0" },

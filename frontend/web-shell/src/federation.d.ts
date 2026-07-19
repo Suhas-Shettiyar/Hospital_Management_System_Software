@@ -10,3 +10,8 @@ declare module "opd_remote/module" {
   import type { HmsModule } from "./app/moduleRegistry";
   export const opdModule: HmsModule;
 }
+
+declare module "lab_remote/module" {
+  import type { HmsModule } from "./app/moduleRegistry";
+  export const labModule: HmsModule;
+}

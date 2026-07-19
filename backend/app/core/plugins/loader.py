@@ -25,7 +25,7 @@ from app.core.module_registry.models import ModuleRegistry
 KNOWN_PACKAGE_MODULES: list[str] = [
     "app.modules.example_hello.plugin",
     "app.modules.opd.plugin",
-    "app.modules.appointments.plugin",
+    "app.modules.lab.plugin",
 ]
 
 

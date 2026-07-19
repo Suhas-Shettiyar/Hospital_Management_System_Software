@@ -9,7 +9,10 @@ dist/
 .vite/
 *.tsbuildinfo
 .mf/
+@mf-types/
 # Editor / OS
 .vscode/
 .DS_Store
 Thumbs.db
+# Dev server output
+*.log
