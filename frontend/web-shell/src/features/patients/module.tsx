@@ -9,4 +9,5 @@ export const patientsModule: HmsModule = {
   order: 1,
   routes: [{ path: "patients", element: <PatientsPage /> }],
   menu: [{ path: "/patients", label: "Patients" }],
+  permissions: ["patients:read"],
 };

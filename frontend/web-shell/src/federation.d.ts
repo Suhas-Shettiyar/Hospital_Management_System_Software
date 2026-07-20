@@ -5,3 +5,8 @@ declare module "example_hello_remote/module" {
   import type { HmsModule } from "./app/moduleRegistry";
   export const exampleHelloModule: HmsModule;
 }
+
+declare module "opd_remote/module" {
+  import type { HmsModule } from "./app/moduleRegistry";
+  export const opdModule: HmsModule;
+}

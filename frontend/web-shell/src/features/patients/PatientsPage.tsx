@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import { listPatients, getPatient, type PatientListItem } from "./patientsApi";
 import PatientFormModal from "./PatientFormModal";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
+import { useCan } from "../auth/useCan";
 
 const CONSENT_COLOR: Record<string, string> = {
   granted: "success",
@@ -28,6 +29,7 @@ export default function PatientsPage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPatientId, setEditingPatientId] = useState<number | null>(null);
+  const canWrite = useCan("patients:write");
 
   const { data, isLoading } = useQuery({
     queryKey: ["patients", debouncedQ, page],
@@ -72,7 +74,7 @@ export default function PatientsPage() {
               setPage(1);
             }}
           />
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)} disabled={!canWrite}>
             New Patient
           </Button>
         </Space>
@@ -103,7 +105,12 @@ export default function PatientsPage() {
                 title: "",
                 width: 48,
                 render: (_, p) => (
-                  <Button type="text" icon={<EditOutlined />} onClick={() => setEditingPatientId(p.patient_id)} />
+                  <Button
+                    type="text"
+                    icon={<EditOutlined />}
+                    disabled={!canWrite}
+                    onClick={() => setEditingPatientId(p.patient_id)}
+                  />
                 ),
               },
             ]}

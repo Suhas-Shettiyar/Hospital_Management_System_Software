@@ -9,10 +9,14 @@ export interface User {
   role: string;
   status: string;
   is_verified: boolean;
+  permissions: string[];
 }
 
 interface AuthCtx {
   user: User | null;
+  /** Derived from user.permissions, memoized once per user change - lets
+   * useCan() do an O(1) lookup instead of an array scan on every call. */
+  permissionSet: Set<string>;
   /** True only while restoring a session from a stored token on first load -
    * ProtectedRoute waits for this before deciding to redirect, so a valid
    * refreshed session isn't bounced to "/" before the check completes. */
@@ -57,7 +61,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  const value = useMemo(() => ({ user, isLoading, login, logout }), [user, isLoading]);
+  const permissionSet = useMemo(() => new Set(user?.permissions ?? []), [user]);
+  const value = useMemo(
+    () => ({ user, permissionSet, isLoading, login, logout }),
+    [user, permissionSet, isLoading]
+  );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
@@ -66,3 +74,4 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }
+

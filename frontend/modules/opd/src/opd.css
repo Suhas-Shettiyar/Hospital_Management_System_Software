@@ -1,0 +1,85 @@
+/* Styles for classes referenced by this module's TSX files but not covered
+ * by antd's ConfigProvider tokens. Every custom property uses a fallback
+ * value — the standalone dev harness (main.tsx, port 5175) has no
+ * ThemeProvider and relies on these fallbacks for a sane look. Do not
+ * strip the fallbacks when editing.
+ */
+
+.opd-workspace { max-width: 1180px; }
+
+.opd-patient-banner {
+  border-radius: var(--radius-card, 12px);
+  box-shadow: var(--shadow-xs, 0 1px 2px rgba(16,24,32,0.04));
+  margin-bottom: 16px;
+  transition: box-shadow var(--duration-base, 220ms) var(--ease, cubic-bezier(0.4, 0, 0.2, 1)),
+              background var(--duration-base, 220ms) var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.opd-patient-banner.pulse-success {
+  animation: opd-pulse-success var(--duration-slow, 320ms) var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+@keyframes opd-pulse-success {
+  0% { background: var(--success-bg, #E7F5EE); box-shadow: var(--shadow-sm, 0 2px 6px rgba(16,24,32,0.06)); }
+  100% { background: transparent; box-shadow: var(--shadow-xs, 0 1px 2px rgba(16,24,32,0.04)); }
+}
+
+.opd-quick-pick {
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 4px 12px;
+  transition: background var(--duration-fast, 150ms) var(--ease, cubic-bezier(0.4, 0, 0.2, 1)),
+              color var(--duration-fast, 150ms) var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
+}
+.opd-quick-pick:hover {
+  background: var(--success-bg, #E7F5EE) !important;
+  color: var(--brand-primary, #0E6F64) !important;
+  border-color: transparent !important;
+}
+
+.opd-rx-line {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--gray-100, #F1F3F6);
+}
+.opd-rx-line:last-child { border-bottom: none; }
+
+.opd-footer-bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 24px;
+  margin-top: 16px;
+  background: #FFFFFF;
+  box-shadow: 0 -4px 16px rgba(16, 24, 32, 0.08);
+  border-radius: var(--radius-card, 12px);
+}
+[data-theme="dark"] .opd-footer-bar {
+  background: var(--gray-100, #242A36);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.hoverable-lift {
+  transition: transform var(--duration-base, 220ms) var(--ease, cubic-bezier(0.4, 0, 0.2, 1)),
+              box-shadow var(--duration-base, 220ms) var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
+}
+.hoverable-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(16,24,32,0.08));
+}
+
+.opd-patient-row,
+.opd-history-row {
+  border-radius: var(--radius-control, 8px);
+  cursor: pointer;
+  padding: 8px 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .opd-patient-banner, .opd-quick-pick, .hoverable-lift, .opd-patient-banner.pulse-success {
+    animation: none !important;
+    transition: none !important;
+  }
+}

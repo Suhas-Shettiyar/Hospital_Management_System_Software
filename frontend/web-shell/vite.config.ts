@@ -21,6 +21,12 @@ export default defineConfig({
           entry: "http://localhost:5174/remoteEntry.js",
           entryGlobalName: "example_hello_remote",
         },
+        opd_remote: {
+          type: "module",
+          name: "opd_remote",
+          entry: "http://localhost:5175/remoteEntry.js",
+          entryGlobalName: "opd_remote",
+        },
       },
       shared: {
         react: { singleton: true, requiredVersion: "^19.1.0" },

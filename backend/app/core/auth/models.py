@@ -15,14 +15,15 @@ from app.database import Base
 
 class UserRole:
     ADMIN = "admin"
+    FRONTDESK = "frontdesk"
     DOCTOR = "doctor"
     NURSE = "nurse"
     LAB = "lab"
-    PHARMACY = "pharmacy"
-    BILLING = "billing"
+    PHARMACIST = "pharmacist"
+    CASHIER = "cashier"
     PATIENT = "patient"
 
-    ALL = (ADMIN, DOCTOR, NURSE, LAB, PHARMACY, BILLING, PATIENT)
+    ALL = (ADMIN, FRONTDESK, DOCTOR, NURSE, LAB, PHARMACIST, CASHIER, PATIENT)
 
 
 class UserStatus:

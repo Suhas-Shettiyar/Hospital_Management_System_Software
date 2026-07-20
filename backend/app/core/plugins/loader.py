@@ -24,6 +24,8 @@ from app.core.module_registry.models import ModuleRegistry
 # list, instead of maintaining two separate hardcoded lists.
 KNOWN_PACKAGE_MODULES: list[str] = [
     "app.modules.example_hello.plugin",
+    "app.modules.opd.plugin",
+    "app.modules.appointments.plugin",
 ]
 
 

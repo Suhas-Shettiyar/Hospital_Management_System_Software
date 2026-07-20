@@ -10,8 +10,14 @@ async function loadExampleHello() {
   registerModule(exampleHelloModule);
 }
 
+async function loadOpd() {
+  const { opdModule } = await import("opd_remote/module");
+  registerModule(opdModule);
+}
+
 const REMOTE_LOADERS: Record<string, () => Promise<void>> = {
   example_hello: loadExampleHello,
+  opd: loadOpd,
 };
 
 /** For each backend-enabled module id that has a known remote, dynamically

@@ -1,14 +1,15 @@
-"""FastAPI dependencies for authenticating requests and enforcing roles.
+"""FastAPI dependencies for authenticating requests and enforcing permissions.
 
-require_roles() lives here (not just in router.py) so future modules outside
+require() lives here (not just in router.py) so future modules outside
 core/auth (patients, billing, ...) can reuse it, e.g.
-Depends(require_roles(UserRole.ADMIN)), without importing route-handling code.
+Depends(require("patients:write")), without importing route-handling code.
 """
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.core.auth.models import User, UserStatus
+from app.core.auth.permissions import permissions_for
 from app.core.auth.security import decode_access_token
 from app.database import get_db
 
@@ -40,10 +41,10 @@ def get_current_user(
     return user
 
 
-def require_roles(*roles: str):
+def require(permission: str):
     def _check(user: User = Depends(get_current_user)) -> User:
-        if user.role not in roles:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "Not permitted for this role")
+        if permission not in permissions_for(user.role):
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Not permitted for this action")
         return user
 
     return _check
