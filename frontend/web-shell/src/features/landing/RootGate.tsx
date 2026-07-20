@@ -10,6 +10,6 @@ import LandingPage from "./LandingPage";
 export default function RootGate() {
   const { user, isLoading } = useAuth();
   if (isLoading) return <FullPageSpinner />;
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user) return <Navigate to={user.role === "patient" ? "/portal" : "/dashboard"} replace />;
   return <LandingPage />;
 }

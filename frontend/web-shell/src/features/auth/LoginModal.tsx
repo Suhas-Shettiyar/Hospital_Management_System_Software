@@ -21,14 +21,18 @@ export default function LoginModal({ open, onClose, defaultRedirectTo = "/dashbo
   const { message } = AntApp.useApp();
   const [loading, setLoading] = useState(false);
 
-  const from = (location.state as { from?: string })?.from ?? defaultRedirectTo;
+  const bounceBackFrom = (location.state as { from?: string })?.from;
 
   const onFinish = async (values: { email: string; password: string }) => {
     setLoading(true);
     try {
-      await login(values.email, values.password);
+      const loggedInUser = await login(values.email, values.password);
       onClose();
-      navigate(from, { replace: true });
+      // A genuine bounce-back target (ProtectedRoute sent them here from a
+      // specific page) always wins; otherwise patients land in the portal,
+      // everyone else in the default staff destination.
+      const destination = bounceBackFrom ?? (loggedInUser.role === "patient" ? "/portal" : defaultRedirectTo);
+      navigate(destination, { replace: true });
     } catch (err) {
       message.error(err instanceof Error ? err.message : "Could not sign in. Check your details and try again.");
     } finally {

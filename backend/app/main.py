@@ -23,7 +23,9 @@ from app.core.plugins.loader import (
     resolve_install_order,
 )
 from app.core.auth.router import router as auth_router
+from app.core.billing_engine.router import router as billing_router
 from app.core.module_registry.router import router as module_registry_router
+from app.core.patient_portal.router import router as patient_portal_router
 from app.core.patients.router import router as patients_router
 from app.api.health import router as health_router
 
@@ -74,11 +76,13 @@ app.add_middleware(
 )
 
 # All API routes live under /api (the frontend proxies /api -> this backend).
-# Core (always-on, never toggled): health + auth + module_registry (read-only) + patients.
+# Core (always-on, never toggled): health + auth + module_registry (read-only) + patients + billing + patient portal.
 app.include_router(health_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 app.include_router(module_registry_router, prefix="/api")
 app.include_router(patients_router, prefix="/api")
+app.include_router(billing_router, prefix="/api")
+app.include_router(patient_portal_router, prefix="/api")
 
 # Optional department packages (opd, lab, pharmacy, example_hello, ...) are
 # mounted by the loader inside lifespan() above, based on module_registry.

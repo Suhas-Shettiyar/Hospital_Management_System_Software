@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { Typography, Input, Button, Table, Tag, Drawer, Descriptions, Space, Card } from "antd";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Typography, Input, Button, Table, Tag, Drawer, Descriptions, Space, Card, Modal, Form, App as AntApp } from "antd";
 import {
   PlusOutlined,
   EditOutlined,
@@ -9,9 +9,11 @@ import {
   ExperimentOutlined,
   ShopOutlined,
   CalendarOutlined,
+  AccountBookOutlined,
+  IdcardOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { listPatients, getPatient, type PatientListItem } from "./patientsApi";
+import { listPatients, getPatient, grantPortalAccess, type PatientListItem } from "./patientsApi";
 import PatientFormModal from "./PatientFormModal";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { getModules } from "../../app/moduleRegistry";
@@ -45,9 +47,21 @@ export default function PatientsPage() {
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
+  const { message } = AntApp.useApp();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPatientId, setEditingPatientId] = useState<number | null>(null);
-  const canWrite = useCan("patients:write");
+  const [portalAccessPatientId, setPortalAccessPatientId] = useState<number | null>(null);
+  const [portalAccessForm] = Form.useForm<{ email: string }>();
+
+  const portalAccessMutation = useMutation({
+    mutationFn: (email: string) => grantPortalAccess(portalAccessPatientId as number, email),
+    onSuccess: () => {
+      message.success("Portal access granted - a password setup email has been sent.");
+      portalAccessForm.resetFields();
+      setPortalAccessPatientId(null);
+    },
+    onError: (err) => message.error(err instanceof Error ? err.message : "Could not grant portal access."),
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["patients", debouncedQ, page],
@@ -122,7 +136,7 @@ export default function PatientsPage() {
               {
                 title: "",
                 width:
-                  48 +
+                  128 +
                   (opdEnabled ? 40 : 0) +
                   (labEnabled ? 40 : 0) +
                   (pharmacyEnabled ? 40 : 0) +
@@ -130,6 +144,21 @@ export default function PatientsPage() {
                 render: (_, p) => (
                   <Space size={4}>
                     <Button type="text" icon={<EditOutlined />} onClick={() => setEditingPatientId(p.patient_id)} />
+                    {/* Billing and portal access are core, always-on (unlike
+                        opd/lab/pharmacy/appointments below) - no xEnabled
+                        guard, neither is ever toggleable. */}
+                    <Button
+                      type="text"
+                      icon={<AccountBookOutlined />}
+                      title="New Bill"
+                      onClick={() => navigate(`/billing/new?patient=${p.patient_id}`)}
+                    />
+                    <Button
+                      type="text"
+                      icon={<IdcardOutlined />}
+                      title="Grant Portal Access"
+                      onClick={() => setPortalAccessPatientId(p.patient_id)}
+                    />
                     {appointmentsEnabled && (
                       <Button
                         type="text"
@@ -168,6 +197,37 @@ export default function PatientsPage() {
             ]}
           />
       </Card>
+
+      <Modal
+        title="Grant Portal Access"
+        open={portalAccessPatientId !== null}
+        onCancel={() => setPortalAccessPatientId(null)}
+        onOk={() => portalAccessForm.submit()}
+        okText="Grant Access"
+        confirmLoading={portalAccessMutation.isPending}
+        destroyOnHidden
+      >
+        <Typography.Paragraph type="secondary">
+          Creates a login for this patient and emails them a link to set their own password.
+        </Typography.Paragraph>
+        <Form
+          form={portalAccessForm}
+          layout="vertical"
+          onFinish={(values) => portalAccessMutation.mutate(values.email)}
+          requiredMark={false}
+        >
+          <Form.Item
+            name="email"
+            label="Patient's email"
+            rules={[
+              { required: true, message: "Enter the patient's email" },
+              { type: "email", message: "Enter a valid email address" },
+            ]}
+          >
+            <Input autoFocus placeholder="e.g. patient@example.com" />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <PatientFormModal open={modalOpen} onClose={() => setModalOpen(false)} />
       <PatientFormModal

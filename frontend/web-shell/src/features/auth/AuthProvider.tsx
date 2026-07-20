@@ -21,7 +21,7 @@ interface AuthCtx {
    * ProtectedRoute waits for this before deciding to redirect, so a valid
    * refreshed session isn't bounced to "/" before the check completes. */
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => void;
 }
 const Ctx = createContext<AuthCtx | null>(null);
@@ -50,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { access_token, user: loggedInUser } = await authApi.login(email, password);
     setToken(access_token);
     setUser(loggedInUser);
+    return loggedInUser;
   };
 
   const logout = () => {

@@ -93,3 +93,13 @@ export async function updatePatient(patientId: number, data: PatientUpdateInput)
   if (!res.ok) throw new Error(await extractErrorMessage(res, "Could not update patient."));
   return res.json() as Promise<Patient>;
 }
+
+export async function grantPortalAccess(patientId: number, email: string): Promise<{ detail: string }> {
+  const res = await fetch(`${API_BASE}/patients/${patientId}/grant-portal-access`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) throw new Error(await extractErrorMessage(res, "Could not grant portal access."));
+  return res.json();
+}
