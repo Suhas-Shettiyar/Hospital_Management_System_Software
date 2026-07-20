@@ -33,6 +33,18 @@ export default defineConfig({
           entry: "http://localhost:5176/remoteEntry.js",
           entryGlobalName: "lab_remote",
         },
+        pharmacy_remote: {
+          type: "module",
+          name: "pharmacy_remote",
+          entry: "http://localhost:5177/remoteEntry.js",
+          entryGlobalName: "pharmacy_remote",
+        },
+        appointments_remote: {
+          type: "module",
+          name: "appointments_remote",
+          entry: "http://localhost:5178/remoteEntry.js",
+          entryGlobalName: "appointments_remote",
+        },
       },
       shared: {
         react: { singleton: true, requiredVersion: "^19.1.0" },

@@ -1,26 +1,27 @@
-"""Appointments/Queue: the front-desk waiting-room board, upstream of OPD.
-
-RBAC: queue:read views the board; queue:write creates tokens (check-in) and
-advances their status. Every write is audited, per app/core/audit/service.py.
-"""
-from datetime import date, datetime, timedelta
+"""Appointments booking/check-in/queue endpoints - a real toggleable department package."""
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.audit.service import record_audit
-from app.core.auth.dependencies import require
-from app.core.auth.models import User
+from app.core.auth.dependencies import get_current_user
+from app.core.auth.models import User, UserRole, UserStatus
+from app.core.auth.schemas import UserOut
 from app.core.patients.models import Patient
 from app.database import get_db
 from app.modules.appointments.models import Appointment, AppointmentStatus
-from app.modules.appointments.schemas import AppointmentCreateRequest, AppointmentOut, AppointmentStatusUpdate
+from app.modules.appointments.schemas import (
+    AppointmentCreate,
+    AppointmentOut,
+    AppointmentSearchResponse,
+)
 
-router = APIRouter(prefix="/queue", tags=["appointments"])
+router = APIRouter(prefix="/appointments", tags=["appointments"])
 
 MODULE_MANIFEST = {
     "id": "appointments",
-    "name": "Appointments & Queue",
+    "name": "Appointments",
     "version": "0.1.0",
     "depends_on": [],
 }
@@ -30,107 +31,190 @@ def _client_ip(request: Request) -> str | None:
     return request.client.host if request.client else None
 
 
-def _today_bounds() -> tuple[datetime, datetime]:
-    start = datetime.combine(date.today(), datetime.min.time())
-    return start, start + timedelta(days=1)
-
-
-def _to_out(db: Session, appt: Appointment) -> AppointmentOut:
-    patient = db.get(Patient, appt.patient_id)
-    doctor = db.get(User, appt.doctor_id)
-    return AppointmentOut(
-        appointment_id=appt.appointment_id,
-        patient_id=appt.patient_id,
-        patient_name=patient.name if patient else "Unknown",
-        patient_uhid=patient.uhid if patient else "",
-        doctor_id=appt.doctor_id,
-        doctor_name=doctor.name if doctor else "Unknown",
-        token_no=appt.token_no,
-        status=appt.status,
-        scheduled_at=appt.scheduled_at,
-        created_at=appt.created_at,
-    )
-
-
-@router.get("", response_model=list[AppointmentOut])
-def list_queue(
-    doctor_id: int | None = Query(default=None),
+@router.get("/doctors", response_model=list[UserOut])
+def list_doctors(
     db: Session = Depends(get_db),
-    _user: User = Depends(require("queue:read")),
+    current_user: User = Depends(get_current_user),
 ):
-    """Today's queue, optionally filtered by doctor - the board is a
-    same-day view, not a historical appointment list."""
-    start, end = _today_bounds()
-    query = db.query(Appointment).filter(Appointment.scheduled_at >= start, Appointment.scheduled_at < end)
-    if doctor_id is not None:
-        query = query.filter(Appointment.doctor_id == doctor_id)
-    appts = query.order_by(Appointment.token_no).all()
-    return [_to_out(db, a) for a in appts]
+    return (
+        db.query(User)
+        .filter(User.role == UserRole.DOCTOR, User.status == UserStatus.ACTIVE)
+        .order_by(User.name)
+        .all()
+    )
 
 
 @router.post("", response_model=AppointmentOut, status_code=status.HTTP_201_CREATED)
-def create_token(
-    payload: AppointmentCreateRequest,
+def book_appointment(
+    payload: AppointmentCreate,
     request: Request,
     db: Session = Depends(get_db),
-    user: User = Depends(require("queue:write")),
+    current_user: User = Depends(get_current_user),
 ):
     if db.get(Patient, payload.patient_id) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
-    if db.get(User, payload.doctor_id) is None:
+
+    doctor = db.get(User, payload.doctor_id)
+    if doctor is None or doctor.role != UserRole.DOCTOR:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Doctor not found")
 
-    start, end = _today_bounds()
-    max_token = (
-        db.query(Appointment.token_no)
-        .filter(
-            Appointment.doctor_id == payload.doctor_id,
-            Appointment.scheduled_at >= start,
-            Appointment.scheduled_at < end,
-        )
-        .order_by(Appointment.token_no.desc())
-        .first()
+    appointment = Appointment(
+        patient_id=payload.patient_id,
+        doctor_id=payload.doctor_id,
+        scheduled_at=payload.scheduled_at,
+        reason=payload.reason,
+        created_by=current_user.user_id,
     )
-    next_token = (max_token[0] + 1) if max_token else 1
-
-    appt = Appointment(patient_id=payload.patient_id, doctor_id=payload.doctor_id, token_no=next_token)
-    db.add(appt)
+    db.add(appointment)
     db.flush()
 
     record_audit(
         db,
-        actor_user_id=user.user_id,
-        action="queue.token_create",
+        actor_user_id=current_user.user_id,
+        action="appointments.book",
         entity="appointment",
-        entity_id=str(appt.appointment_id),
+        entity_id=str(appointment.appointment_id),
         ip_address=_client_ip(request),
     )
     db.commit()
-    db.refresh(appt)
-    return _to_out(db, appt)
+    db.refresh(appointment)
+    return appointment
 
 
-@router.patch("/{appointment_id}/status", response_model=AppointmentOut)
-def update_status(
-    appointment_id: int,
-    payload: AppointmentStatusUpdate,
-    request: Request,
+@router.get("", response_model=AppointmentSearchResponse)
+def list_appointments(
+    patient_id: int | None = Query(default=None),
+    doctor_id: int | None = Query(default=None),
+    status_: str | None = Query(default=None, alias="status"),
+    on_date: date | None = Query(default=None, alias="date"),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    user: User = Depends(require("queue:write")),
+    current_user: User = Depends(get_current_user),
 ):
-    appt = db.get(Appointment, appointment_id)
-    if appt is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Token not found")
+    query = db.query(Appointment)
+    if patient_id is not None:
+        query = query.filter(Appointment.patient_id == patient_id)
+    if doctor_id is not None:
+        query = query.filter(Appointment.doctor_id == doctor_id)
+    if status_ is not None:
+        query = query.filter(Appointment.status == status_)
+    if on_date is not None:
+        query = query.filter(
+            Appointment.scheduled_at >= datetime.combine(on_date, datetime.min.time()),
+            Appointment.scheduled_at < datetime.combine(on_date, datetime.max.time()),
+        )
 
-    appt.status = payload.status
+    total = query.count()
+    items = query.order_by(Appointment.scheduled_at).offset(offset).limit(limit).all()
+    return AppointmentSearchResponse(items=items, total=total)
+
+
+@router.get("/{appointment_id}", response_model=AppointmentOut)
+def get_appointment(
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    appointment = db.get(Appointment, appointment_id)
+    if appointment is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Appointment not found")
+    return appointment
+
+
+def _transition(
+    db: Session,
+    request: Request,
+    current_user: User,
+    appointment_id: int,
+    *,
+    from_statuses: tuple[str, ...],
+    to_status: str,
+    action: str,
+    set_checked_in_at: bool = False,
+) -> Appointment:
+    appointment = db.get(Appointment, appointment_id)
+    if appointment is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Appointment not found")
+    if appointment.status not in from_statuses:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"Cannot {action.split('.')[-1]} an appointment with status '{appointment.status}'",
+        )
+
+    appointment.status = to_status
+    if set_checked_in_at:
+        appointment.checked_in_at = datetime.utcnow()
+
     record_audit(
         db,
-        actor_user_id=user.user_id,
-        action="queue.status_update",
+        actor_user_id=current_user.user_id,
+        action=action,
         entity="appointment",
-        entity_id=str(appt.appointment_id),
+        entity_id=str(appointment.appointment_id),
         ip_address=_client_ip(request),
     )
     db.commit()
-    db.refresh(appt)
-    return _to_out(db, appt)
+    db.refresh(appointment)
+    return appointment
+
+
+@router.post("/{appointment_id}/check-in", response_model=AppointmentOut)
+def check_in(
+    appointment_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return _transition(
+        db, request, current_user, appointment_id,
+        from_statuses=(AppointmentStatus.SCHEDULED,),
+        to_status=AppointmentStatus.CHECKED_IN,
+        action="appointments.check_in",
+        set_checked_in_at=True,
+    )
+
+
+@router.post("/{appointment_id}/complete", response_model=AppointmentOut)
+def complete(
+    appointment_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return _transition(
+        db, request, current_user, appointment_id,
+        from_statuses=(AppointmentStatus.CHECKED_IN,),
+        to_status=AppointmentStatus.COMPLETED,
+        action="appointments.complete",
+    )
+
+
+@router.post("/{appointment_id}/cancel", response_model=AppointmentOut)
+def cancel(
+    appointment_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return _transition(
+        db, request, current_user, appointment_id,
+        from_statuses=(AppointmentStatus.SCHEDULED, AppointmentStatus.CHECKED_IN),
+        to_status=AppointmentStatus.CANCELLED,
+        action="appointments.cancel",
+    )
+
+
+@router.post("/{appointment_id}/no-show", response_model=AppointmentOut)
+def no_show(
+    appointment_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return _transition(
+        db, request, current_user, appointment_id,
+        from_statuses=(AppointmentStatus.SCHEDULED,),
+        to_status=AppointmentStatus.NO_SHOW,
+        action="appointments.no_show",
+    )

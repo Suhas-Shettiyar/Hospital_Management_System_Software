@@ -20,10 +20,22 @@ async function loadLab() {
   registerModule(labModule);
 }
 
+async function loadPharmacy() {
+  const { pharmacyModule } = await import("pharmacy_remote/module");
+  registerModule(pharmacyModule);
+}
+
+async function loadAppointments() {
+  const { appointmentsModule } = await import("appointments_remote/module");
+  registerModule(appointmentsModule);
+}
+
 const REMOTE_LOADERS: Record<string, () => Promise<void>> = {
   example_hello: loadExampleHello,
   opd: loadOpd,
   lab: loadLab,
+  pharmacy: loadPharmacy,
+  appointments: loadAppointments,
 };
 
 /** For each backend-enabled module id that has a known remote, dynamically

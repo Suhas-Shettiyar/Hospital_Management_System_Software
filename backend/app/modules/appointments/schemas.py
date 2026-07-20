@@ -1,31 +1,44 @@
-"""Request/response models for the appointments/queue endpoints."""
+"""Request/response models for the Appointments booking/queue endpoints."""
 from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from app.modules.appointments.models import AppointmentStatus
 
-
-class AppointmentCreateRequest(BaseModel):
+class AppointmentCreate(BaseModel):
     patient_id: int
     doctor_id: int
-
-
-class AppointmentStatusUpdate(BaseModel):
-    status: str = Field(pattern="^(" + "|".join(AppointmentStatus.ALL) + ")$")
+    scheduled_at: datetime
+    reason: str | None = Field(default=None, max_length=255)
 
 
 class AppointmentOut(BaseModel):
     appointment_id: int
     patient_id: int
-    patient_name: str
-    patient_uhid: str
     doctor_id: int
-    doctor_name: str
-    token_no: int
-    status: str
     scheduled_at: datetime
+    status: str
+    reason: str | None
+    checked_in_at: datetime | None
+    created_by: int
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class AppointmentListItem(BaseModel):
+    appointment_id: int
+    patient_id: int
+    doctor_id: int
+    scheduled_at: datetime
+    status: str
+    reason: str | None
+    checked_in_at: datetime | None
+
+    class Config:
+        from_attributes = True
+
+
+class AppointmentSearchResponse(BaseModel):
+    items: list[AppointmentListItem]
+    total: int

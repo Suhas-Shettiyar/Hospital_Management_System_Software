@@ -15,3 +15,13 @@ declare module "lab_remote/module" {
   import type { HmsModule } from "./app/moduleRegistry";
   export const labModule: HmsModule;
 }
+
+declare module "pharmacy_remote/module" {
+  import type { HmsModule } from "./app/moduleRegistry";
+  export const pharmacyModule: HmsModule;
+}
+
+declare module "appointments_remote/module" {
+  import type { HmsModule } from "./app/moduleRegistry";
+  export const appointmentsModule: HmsModule;
+}

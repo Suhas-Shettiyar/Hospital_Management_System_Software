@@ -67,13 +67,34 @@ export async function getPatient(patientId: number): Promise<Patient> {
   return res.json();
 }
 
+export async function searchLabCatalog(q: string): Promise<LabTestCatalogSearchResponse> {
+  const res = await authedFetch(`/lab/catalog?q=${encodeURIComponent(q)}&limit=20`);
+  if (!res.ok) throw new Error(await extractErrorMessage(res, "Could not search the test catalog."));
+  return res.json();
+}
+
 export type LabOrderStatus = "ordered" | "completed";
+
+export interface LabTestCatalogItem {
+  catalog_id: number;
+  loinc_code: string;
+  test_name: string;
+  default_reference_range: string | null;
+}
+
+export interface LabTestCatalogSearchResponse {
+  items: LabTestCatalogItem[];
+  total: number;
+}
 
 export interface LabOrderCreateInput {
   patient_id: number;
   consult_id?: number;
+  // Either catalog_id (preferred) or test_name (free-text fallback) -
+  // see NewLabOrderForm's two-mode picker.
+  catalog_id?: number;
   test_code?: string;
-  test_name: string;
+  test_name?: string;
 }
 
 export interface LabResultIn {
@@ -93,12 +114,14 @@ export interface LabOrder {
   order_id: number;
   patient_id: number;
   consult_id: number | null;
+  catalog_id: number | null;
   test_code: string | null;
   test_name: string;
   status: LabOrderStatus;
   ordered_by: number;
   ordered_at: string;
   result: LabResultOut | null;
+  catalog: LabTestCatalogItem | null;
 }
 
 export interface LabOrderListItem {

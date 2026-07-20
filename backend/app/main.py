@@ -11,6 +11,11 @@ from sqlalchemy import text
 from app.config import settings
 from app.database import engine, SessionLocal
 from app.core.module_registry.seed import seed_default_modules
+# Exception to "core doesn't import specific packages" - same explicit-list
+# philosophy already used in alembic/env.py. lab_test_catalog is reference
+# data, not app logic, and seeding it here (like module_registry) keeps the
+# curated list editable without a new migration each time.
+from app.modules.lab.seed import seed_default_lab_catalog
 from app.core.plugins.loader import (
     build_plugin_manager,
     discover_modules,
@@ -43,6 +48,7 @@ async def lifespan(app: FastAPI):
         db = SessionLocal()
         try:
             seed_default_modules(db, discovered=_discovered)
+            seed_default_lab_catalog(db)
             enabled_ids = get_enabled_module_ids(db)
         finally:
             db.close()
