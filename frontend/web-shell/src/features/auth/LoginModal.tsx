@@ -26,13 +26,13 @@ export default function LoginModal({ open, onClose, defaultRedirectTo = "/dashbo
   const onFinish = async (values: { email: string; password: string }) => {
     setLoading(true);
     try {
-      const loggedInUser = await login(values.email, values.password);
+      await login(values.email, values.password);
       onClose();
       // A genuine bounce-back target (ProtectedRoute sent them here from a
-      // specific page) always wins; otherwise patients land in the portal,
-      // everyone else in the default staff destination.
-      const destination = bounceBackFrom ?? (loggedInUser.role === "patient" ? "/portal" : defaultRedirectTo);
-      navigate(destination, { replace: true });
+      // specific page) always wins; otherwise everyone lands on the default
+      // staff destination - the sidebar's own permission filter decides
+      // what a given role (patients included) actually sees from there.
+      navigate(bounceBackFrom ?? defaultRedirectTo, { replace: true });
     } catch (err) {
       message.error(err instanceof Error ? err.message : "Could not sign in. Check your details and try again.");
     } finally {

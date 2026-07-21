@@ -24,10 +24,10 @@ body {
 }
 
 /* ---- App shell ---- */
-/* Sidebar is a deep Pine Tree fill — the app's color anchor — instead of
+/* Sidebar is a deep Feldgrau fill — the app's color anchor — instead of
  * stark dark or bright green/white. Independent of light/dark app mode. */
 .sidebar {
-  background: var(--brand-surface-fill, #1B4332) !important;
+  background: var(--brand-surface-fill, #425040) !important;
   border-inline-end: none;
 }
 .sidebar .ant-layout-sider-children { background: transparent; }
@@ -46,13 +46,15 @@ body {
   width: 30px; height: 30px; border-radius: 9px;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: var(--shadow-sm, 0 2px 6px rgba(16,24,32,0.06));
-  color: var(--brand-surface-fill, #1B4332); font-weight: 800;
+  color: var(--brand-surface-fill, #425040); font-weight: 800;
 }
 .sidebar-name { flex: 1; font-size: 1.05rem; letter-spacing: 0.3px; }
 
 .ant-menu-item-selected {
   position: relative;
 }
+/* Gold rail on the active nav item — the one warm accent against the sage
+ * sidebar, so the current page is unmistakable at a glance. */
 .ant-menu-item-selected::before {
   content: "";
   position: absolute;
@@ -60,13 +62,14 @@ body {
   inset-inline-start: 0;
   width: 3px;
   border-radius: 0 3px 3px 0;
-  background: var(--brand-accent);
+  background: var(--brand-gold, #C99A3A);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--brand-gold, #C99A3A) 60%, transparent);
 }
 
 .topbar {
   display: flex; align-items: center; justify-content: space-between;
   gap: var(--space-lg); padding-inline: var(--space-lg);
-  border-bottom: 1px solid var(--gray-200, #E1E8E1);
+  border-bottom: 1px solid var(--gray-200, #DDE1D8);
   position: sticky; top: 0; z-index: 10;
 }
 .topbar-search { flex: 1; display: flex; }
@@ -74,13 +77,13 @@ body {
   transition: border-color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease);
 }
 .topbar-search .ant-select-focused .ant-select-selector {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary) 18%, transparent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-gold, #C99A3A) 20%, transparent) !important;
 }
 .topbar-username { font-weight: 600; }
 .kbd-hint {
   font: 600 11px/1 ui-monospace, monospace;
-  color: var(--gray-600, #5A6B5A);
-  background: var(--gray-100, #EEF2EE);
+  color: var(--gray-600, #57695B);
+  background: var(--gray-100, #EDEFEA);
   border-radius: 5px; padding: 3px 6px;
 }
 
@@ -103,17 +106,16 @@ body {
 }
 
 /* ---- Background: flat, light, aesthetic surface tints ----
- * No gradients/blobs — just calm, cohesive flat color. `.surface-tint` is
- * a very light misty wash for content-dense surfaces (dashboard, app
- * content). `.surface-brand` is a flat deep Pine Tree band for the
- * landing hero/closing sections and the login modal backdrop — solid
- * color, no gradient, so it reads as intentional and clean rather than
- * a decorative effect competing with the content on top of it. */
+ * `.surface-tint` is a very light sage wash for content-dense surfaces
+ * (dashboard, app content). `.surface-brand` is a deep Feldgrau→Reseda
+ * gradient band for the landing hero/closing sections and the login modal
+ * backdrop — subtle depth instead of a flat fill, so it reads as premium
+ * without competing with the content on top of it. */
 .surface-tint {
-  background: var(--gray-50, #F7F9F7);
+  background: var(--gray-50, #F5F6F3);
 }
 .surface-brand {
-  background: var(--brand-surface-fill, #1B4332);
+  background: linear-gradient(135deg, var(--brand-surface-fill, #425040) 0%, var(--brand-accent, #798370) 100%);
 }
 
 /* ---- Login (modal-only now) ---- */
@@ -138,7 +140,7 @@ body {
   display: flex; align-items: center; justify-content: space-between;
   gap: var(--space-lg); padding: var(--space-lg) var(--space-xxl);
   background: #FFFFFF;
-  border-bottom: 1px solid var(--gray-200, #E1E8E1);
+  border-bottom: 1px solid var(--gray-200, #DDE1D8);
   position: sticky; top: 0; z-index: 10;
 }
 .landing-nav-brand { display: flex; align-items: center; gap: 12px; }
@@ -149,13 +151,27 @@ body {
   display: flex; align-items: center; justify-content: center;
   padding: 96px var(--space-xxl);
   text-align: center;
+  position: relative;
+  overflow: hidden;
 }
-.landing-hero-content { max-width: 720px; display: flex; flex-direction: column; align-items: center; }
+/* Soft gold glow floating in the hero corner — the one warm accent against
+ * the sage gradient, giving the band depth instead of a flat fill. */
+.landing-hero::before {
+  content: "";
+  position: absolute;
+  top: -120px; right: -80px;
+  width: 360px; height: 360px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--brand-gold, #C99A3A) 35%, transparent), transparent 70%);
+  pointer-events: none;
+}
+.landing-hero-content { max-width: 720px; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 1; }
 .landing-kicker {
   display: inline-block;
   padding: 4px 14px; border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
+  background: color-mix(in srgb, var(--brand-gold, #C99A3A) 28%, transparent);
   color: #fff; font-size: 13px; font-weight: 600; letter-spacing: 0.3px;
+  border: 1px solid color-mix(in srgb, var(--brand-gold, #C99A3A) 50%, transparent);
 }
 .landing-hero-cta { display: flex; gap: var(--space-md); margin-top: var(--space-xl); }
 
@@ -173,8 +189,8 @@ body {
 .landing-footer {
   display: flex; justify-content: center;
   padding: var(--space-xl);
-  background: var(--gray-50, #F7F9F7);
-  border-top: 1px solid var(--gray-200, #E1E8E1);
+  background: var(--gray-50, #F5F6F3);
+  border-top: 1px solid var(--gray-200, #DDE1D8);
 }
 
 @media (max-width: 820px) {
@@ -186,4 +202,4 @@ body {
 
 /* Quality floor: respect reduced motion + visible focus. */
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
-:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 1px; }
+:focus-visible { outline: 2px solid var(--brand-gold, #C99A3A); outline-offset: 1px; }

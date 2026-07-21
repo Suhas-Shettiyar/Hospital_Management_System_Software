@@ -19,4 +19,5 @@ export const opdModule: HmsModule = {
     { path: "/opd", label: "Consultations" },
     { path: "/opd/new", label: "New Consultation" },
   ],
+  permissions: ["consultation:read"],
 };

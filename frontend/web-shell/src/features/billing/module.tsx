@@ -20,4 +20,5 @@ export const billingModule: HmsModule = {
     { path: "billing/bills/:billId/print", element: <ReceiptPrintView /> },
   ],
   menu: [{ path: "/billing", label: "Billing" }],
+  permissions: ["billing:read"],
 };

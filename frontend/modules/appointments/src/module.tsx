@@ -19,4 +19,5 @@ export const appointmentsModule: HmsModule = {
     { path: "/appointments", label: "Queue" },
     { path: "/appointments/new", label: "Book Appointment" },
   ],
+  permissions: ["queue:read"],
 };

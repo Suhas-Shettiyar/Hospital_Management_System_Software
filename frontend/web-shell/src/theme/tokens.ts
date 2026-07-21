@@ -1,10 +1,9 @@
 /**
  * Design tokens — the single source of truth for the visual identity.
- * Identity: Pine Tree + Khaki Green + Macaron + Misty — an earthy, natural
- * enterprise palette. Pine anchors solid-fill chrome (sidebar, hero bands),
- * khaki green is the sparing accent, macaron is the soft pastel tint used
- * for highlighted/selected states, and misty is the neutral grey-green
- * scale for text/borders/backgrounds.
+ * Identity: Feldgrau + Reseda green + Alabaster + Ash gray, with one warm
+ * Gold accent reserved for primary CTAs, the active-nav indicator, and
+ * highlights. The sage family stays calm and earthy everywhere else so the
+ * gold reads as intentional emphasis, not noise.
  *
  * These feed Ant Design's ConfigProvider. Change the look here, nowhere else.
  */
@@ -14,27 +13,35 @@ import { theme as antdTheme } from "antd";
 // Brand constants also exposed as CSS variables (see ThemeProvider) so our
 // own (non-antd) components can use them.
 export const brand = {
-  // Pine Tree — mid tone usable for buttons/icons, hover darkens toward
-  // the deep anchor shade; dark-mode primary lightens toward khaki-green
+  // Feldgrau — mid tone usable for buttons/icons, hover darkens toward
+  // the deep anchor shade; dark-mode primary lightens toward sage
   // so it stays legible on a dark background.
-  primary: "#2D6A4F",
-  primaryHover: "#1B4332",
-  primaryDark: "#8FBB9C",
-  primaryDarkHover: "#A9CBAF",
-  // Macaron — soft pastel mint tint, used for selected/highlighted states.
-  primarySoft: "#E3F0E8",
-  primarySoftDark: "#20362B",
-  // Deep, fixed (not light/dark-mode dependent) Pine Tree used ONLY for
+  primary: "#57695B",
+  primaryHover: "#425040",
+  primaryDark: "#9B9D85",
+  primaryDarkHover: "#BABFAC",
+  // Alabaster — soft pastel tint, used for selected/highlighted states.
+  primarySoft: "#EDF1EA",
+  primarySoftDark: "#2E3830",
+  // Deep, fixed (not light/dark-mode dependent) Feldgrau used ONLY for
   // large solid-fill bands that need to hold white text (sidebar, landing
   // hero/closing, login modal chrome) — brand.primary itself stays a
   // lighter usable mid-tone for buttons and icons, so it needs a deeper
   // sibling for contrast here.
-  surfaceFill: "#1B4332",
-  // Khaki Green — sparing accent for CTAs/highlights.
-  accent: "#8A9A5B",
-  accentDark: "#A6B87A",
-  accentSoft: "#EFF1DE",
-  accentSoftDark: "#33361F",
+  surfaceFill: "#425040",
+  // Reseda green — sparing secondary accent for supporting highlights.
+  accent: "#798370",
+  accentDark: "#9BAA8E",
+  accentSoft: "#E5E9E0",
+  accentSoftDark: "#333B2E",
+  // Gold — the one warm, high-contrast hue against the sage palette;
+  // reserved for primary CTAs, the active-nav indicator, and anything
+  // that needs to visually pop rather than blend into the earthy greens.
+  gold: "#C99A3A",
+  goldHover: "#B3852A",
+  goldDark: "#E0B563",
+  goldSoft: "#FBF0DA",
+  goldSoftDark: "#3D2F14",
   danger: "#D92D20",
   dangerDark: "#F1645A",
   success: "#1F9254",
@@ -49,12 +56,12 @@ export const brand = {
   infoDark: "#5B93F5",
 } as const;
 
-// Misty — a soft grey-green neutral scale, used for text/borders/backgrounds
-// so the whole app's "gray" reads as an earthy misty tone instead of a
-// cool office-gray, stark white, or the prior lavender tint.
+// Ash gray / Alabaster — a soft sage-tinted neutral scale, used for
+// text/borders/backgrounds so the whole app's "gray" reads as part of the
+// same sage family instead of a cool office-gray or stark white.
 export const gray = {
-  light: ["#F7F9F7", "#EEF2EE", "#E1E8E1", "#CBD6CB", "#A8B8A8", "#7E8F7E", "#5A6B5A", "#3A473A", "#1F2A1F"],
-  dark: ["#1F2A1F", "#2A362A", "#354235", "#455245", "#5C6B5C", "#8A9A8A", "#AEBCAE", "#D3DDD3", "#EEF2EE"],
+  light: ["#F5F6F3", "#EDEFEA", "#DDE1D8", "#BABFAC", "#9B9D85", "#798370", "#57695B", "#3A4438", "#232B22"],
+  dark: ["#1D231C", "#2A322A", "#3A4438", "#57695B", "#798370", "#9B9D85", "#BABFAC", "#DDE1D8", "#F5F6F3"],
 } as const;
 
 export const shadow = {
@@ -89,7 +96,9 @@ const fontStack =
   '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 const shared: ThemeConfig["token"] = {
-  colorPrimary: brand.primary,
+  // Gold is the primary action color app-wide (buttons, links, focus rings)
+  // so CTAs pop against the sage surfaces instead of blending into them.
+  colorPrimary: brand.gold,
   colorInfo: brand.info,
   colorSuccess: brand.success,
   colorWarning: brand.warning,
@@ -117,10 +126,10 @@ export const lightTheme: ThemeConfig = {
   components: {
     Layout: { headerBg: "#FFFFFF", siderBg: "#FFFFFF", bodyBg: gray.light[0] },
     Menu: {
-      itemSelectedBg: brand.primarySoft, itemSelectedColor: brand.primaryHover, itemHoverBg: gray.light[1],
+      itemSelectedBg: brand.goldSoft, itemSelectedColor: brand.goldHover, itemHoverBg: gray.light[1],
       darkItemBg: "transparent", darkItemColor: "rgba(255,255,255,0.72)",
       darkItemHoverColor: "#FFFFFF", darkItemHoverBg: "rgba(255,255,255,0.08)",
-      darkItemSelectedBg: "rgba(255,255,255,0.16)", darkItemSelectedColor: "#FFFFFF",
+      darkItemSelectedBg: "rgba(201,154,58,0.24)", darkItemSelectedColor: "#FFFFFF",
     },
     Table: { headerBg: gray.light[1], rowHoverBg: gray.light[0], cellPaddingBlockSM: 6 },
     Button: { primaryShadow: shadow.light.xs, borderRadius: radius.control },
@@ -136,7 +145,7 @@ export const darkTheme: ThemeConfig = {
   algorithm: [antdTheme.darkAlgorithm, antdTheme.compactAlgorithm],
   token: {
     ...shared,
-    colorPrimary: brand.primaryDark,
+    colorPrimary: brand.goldDark,
     colorInfo: brand.infoDark,
     colorSuccess: brand.successDark,
     colorWarning: brand.warningDark,
@@ -152,10 +161,10 @@ export const darkTheme: ThemeConfig = {
   components: {
     Layout: { headerBg: gray.dark[1], siderBg: gray.dark[0], bodyBg: gray.dark[0] },
     Menu: {
-      itemSelectedBg: brand.primarySoftDark, itemSelectedColor: brand.primaryDark, itemHoverBg: gray.dark[2],
+      itemSelectedBg: brand.goldSoftDark, itemSelectedColor: brand.goldDark, itemHoverBg: gray.dark[2],
       darkItemBg: "transparent", darkItemColor: "rgba(255,255,255,0.72)",
       darkItemHoverColor: "#FFFFFF", darkItemHoverBg: "rgba(255,255,255,0.08)",
-      darkItemSelectedBg: "rgba(255,255,255,0.16)", darkItemSelectedColor: "#FFFFFF",
+      darkItemSelectedBg: "rgba(224,181,99,0.24)", darkItemSelectedColor: "#FFFFFF",
     },
     Table: { headerBg: gray.dark[2], rowHoverBg: gray.dark[2] },
     Button: { primaryShadow: shadow.dark.xs, borderRadius: radius.control },
