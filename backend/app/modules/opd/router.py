@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.audit.service import record_audit
-from app.core.auth.dependencies import get_current_user
+from app.core.auth.dependencies import require
 from app.core.auth.models import User
 from app.core.patients.models import Patient
 from app.database import get_db
@@ -34,7 +34,7 @@ def create_consultation(
     payload: ConsultationCreate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("consultation:write")),
 ):
     if db.get(Patient, payload.patient_id) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
@@ -74,7 +74,7 @@ def list_consultations(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("consultation:read")),
 ):
     query = db.query(Consultation)
     if patient_id is not None:
@@ -100,7 +100,7 @@ def list_consultations(
 def get_consultation(
     consult_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("consultation:read")),
 ):
     consult = (
         db.query(Consultation)

@@ -4,7 +4,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.audit.service import record_audit
-from app.core.auth.dependencies import get_current_user
+from app.core.auth.dependencies import require
 from app.core.auth.models import User
 from app.core.patients.models import Patient
 from app.database import get_db
@@ -38,7 +38,7 @@ def create_order(
     payload: LabOrderCreate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("lab:write")),
 ):
     if db.get(Patient, payload.patient_id) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
@@ -100,7 +100,7 @@ def search_catalog(
     q: str = Query(default=""),
     limit: int = Query(default=20, ge=1, le=50),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("lab:read")),
 ):
     query = db.query(LabTestCatalog).filter(LabTestCatalog.is_active.is_(True))
     if q:
@@ -120,7 +120,7 @@ def list_orders(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("lab:read")),
 ):
     query = db.query(LabOrder)
     if patient_id is not None:
@@ -139,7 +139,7 @@ def list_orders(
 def get_order(
     order_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("lab:read")),
 ):
     order = (
         db.query(LabOrder)
@@ -158,7 +158,7 @@ def enter_result(
     payload: LabResultIn,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("lab:write")),
 ):
     order = db.get(LabOrder, order_id)
     if order is None:

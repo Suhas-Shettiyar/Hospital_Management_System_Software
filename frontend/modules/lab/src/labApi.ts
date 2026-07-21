@@ -55,6 +55,18 @@ export interface Patient extends PatientListItem {
   created_at: string;
 }
 
+export interface CurrentUser {
+  user_id: number;
+  role: string;
+  permissions: string[];
+}
+
+export async function me(): Promise<CurrentUser> {
+  const res = await authedFetch("/auth/me");
+  if (!res.ok) throw new Error(await extractErrorMessage(res, "Could not load current user."));
+  return res.json();
+}
+
 export async function searchPatients(q: string): Promise<PatientSearchResponse> {
   const res = await authedFetch(`/patients?q=${encodeURIComponent(q)}&limit=8`);
   if (!res.ok) throw new Error(await extractErrorMessage(res, "Could not search patients."));

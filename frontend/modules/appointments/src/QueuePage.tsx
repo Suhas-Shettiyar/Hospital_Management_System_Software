@@ -15,6 +15,7 @@ import {
   type AppointmentListItem,
   type AppointmentStatus,
 } from "./appointmentsApi";
+import { useCan } from "./useCan";
 
 type ViewMode = "queue" | "upcoming" | "all";
 
@@ -47,6 +48,7 @@ export default function QueuePage() {
   const { message } = AntApp.useApp();
   const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<ViewMode>("queue");
+  const canWrite = useCan("queue:write");
 
   const statusFilter: AppointmentStatus | undefined =
     viewMode === "queue" ? "checked_in" : viewMode === "upcoming" ? "scheduled" : undefined;
@@ -115,7 +117,7 @@ export default function QueuePage() {
               { label: "All", value: "all" },
             ]}
           />
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate("/appointments/new")}>
+          <Button type="primary" icon={<PlusOutlined />} disabled={!canWrite} onClick={() => navigate("/appointments/new")}>
             Book Appointment
           </Button>
         </div>
@@ -145,23 +147,23 @@ export default function QueuePage() {
                 <Space size={4}>
                   {r.status === "scheduled" && (
                     <>
-                      <Button size="small" onClick={() => checkInMutation.mutate(r.appointment_id)}>
+                      <Button size="small" disabled={!canWrite} onClick={() => checkInMutation.mutate(r.appointment_id)}>
                         Check In
                       </Button>
-                      <Button size="small" onClick={() => noShowMutation.mutate(r.appointment_id)}>
+                      <Button size="small" disabled={!canWrite} onClick={() => noShowMutation.mutate(r.appointment_id)}>
                         No-show
                       </Button>
-                      <Button size="small" danger onClick={() => cancelMutation.mutate(r.appointment_id)}>
+                      <Button size="small" danger disabled={!canWrite} onClick={() => cancelMutation.mutate(r.appointment_id)}>
                         Cancel
                       </Button>
                     </>
                   )}
                   {r.status === "checked_in" && (
                     <>
-                      <Button size="small" type="primary" onClick={() => completeMutation.mutate(r.appointment_id)}>
+                      <Button size="small" type="primary" disabled={!canWrite} onClick={() => completeMutation.mutate(r.appointment_id)}>
                         Complete
                       </Button>
-                      <Button size="small" danger onClick={() => cancelMutation.mutate(r.appointment_id)}>
+                      <Button size="small" danger disabled={!canWrite} onClick={() => cancelMutation.mutate(r.appointment_id)}>
                         Cancel
                       </Button>
                     </>

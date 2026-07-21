@@ -31,6 +31,7 @@ import {
   type BillStatus,
 } from "./billingApi";
 import { getPatient } from "../patients/patientsApi";
+import { useCan } from "../auth/useCan";
 
 const STATUS_COLOR: Record<BillStatus, string> = {
   draft: "default",
@@ -56,6 +57,8 @@ const PAYMENT_MODE_OPTIONS = [
 export default function BillDetailDrawer({ billId, onClose }: { billId: number | null; onClose: () => void }) {
   const { message } = AntApp.useApp();
   const queryClient = useQueryClient();
+  const canWrite = useCan("billing:write");
+  const canCollect = useCan("billing:collect");
   const [itemForm] = Form.useForm<BillItemCreateInput>();
   const [paymentForm] = Form.useForm<PaymentCreateInput>();
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -161,6 +164,7 @@ export default function BillDetailDrawer({ billId, onClose }: { billId: number |
                           danger
                           size="small"
                           icon={<DeleteOutlined />}
+                          disabled={!canWrite}
                           onClick={() => removeItemMutation.mutate(r.item_id)}
                         />
                       ),
@@ -170,7 +174,7 @@ export default function BillDetailDrawer({ billId, onClose }: { billId: number |
             ]}
           />
 
-          {bill.status === "draft" && (
+          {bill.status === "draft" && canWrite && (
             <Form
               form={itemForm}
               layout="inline"
@@ -221,17 +225,27 @@ export default function BillDetailDrawer({ billId, onClose }: { billId: number |
 
           <Space wrap>
             {bill.status === "draft" && (
-              <Button type="primary" onClick={() => finalizeMutation.mutate()} loading={finalizeMutation.isPending}>
+              <Button
+                type="primary"
+                onClick={() => finalizeMutation.mutate()}
+                loading={finalizeMutation.isPending}
+                disabled={!canWrite}
+              >
                 Finalize
               </Button>
             )}
             {bill.status === "finalized" && (
-              <Button type="primary" onClick={() => setPaymentModalOpen(true)}>
+              <Button type="primary" onClick={() => setPaymentModalOpen(true)} disabled={!canCollect}>
                 Record Payment
               </Button>
             )}
             {(bill.status === "draft" || bill.status === "finalized") && (
-              <Button danger onClick={() => cancelMutation.mutate()} loading={cancelMutation.isPending}>
+              <Button
+                danger
+                onClick={() => cancelMutation.mutate()}
+                loading={cancelMutation.isPending}
+                disabled={!canWrite}
+              >
                 Cancel Bill
               </Button>
             )}

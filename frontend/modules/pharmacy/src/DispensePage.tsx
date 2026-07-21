@@ -21,6 +21,7 @@ import {
   type PatientListItem,
   type MedicineListItem,
 } from "./pharmacyApi";
+import { useCan } from "./useCan";
 
 interface FormValues {
   patient_id: number;
@@ -72,6 +73,7 @@ export default function DispensePage() {
   const [searchParams] = useSearchParams();
   const { message } = AntApp.useApp();
   const [submitting, setSubmitting] = useState(false);
+  const canDispense = useCan("pharmacy:dispense");
   const [patientQuery, setPatientQuery] = useState("");
   const debouncedPatientQuery = useDebounced(patientQuery, 300);
 
@@ -160,7 +162,7 @@ export default function DispensePage() {
             )}
           </Form.List>
 
-          <Button type="primary" htmlType="submit" loading={submitting} size="large">
+          <Button type="primary" htmlType="submit" loading={submitting} disabled={!canDispense} size="large">
             Dispense
           </Button>
         </Form>

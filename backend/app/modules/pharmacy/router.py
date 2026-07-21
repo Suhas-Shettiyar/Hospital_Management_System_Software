@@ -6,7 +6,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.audit.service import record_audit
-from app.core.auth.dependencies import get_current_user
+from app.core.auth.dependencies import require
 from app.core.auth.models import User
 from app.core.patients.models import Patient
 from app.database import get_db
@@ -61,7 +61,7 @@ def create_medicine(
     payload: MedicineCreate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("pharmacy:master")),
 ):
     medicine = Medicine(
         name=payload.name,
@@ -93,7 +93,7 @@ def list_medicines(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("pharmacy:read")),
 ):
     totals = _total_quantity_subquery(db)
     query = (
@@ -133,7 +133,7 @@ def list_medicines(
 def get_medicine(
     medicine_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("pharmacy:read")),
 ):
     medicine = (
         db.query(Medicine)
@@ -152,7 +152,7 @@ def patch_medicine(
     payload: MedicinePatch,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("pharmacy:master")),
 ):
     medicine = db.get(Medicine, medicine_id)
     if medicine is None:
@@ -182,7 +182,7 @@ def receive_batch(
     payload: MedicineBatchCreate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("pharmacy:purchase")),
 ):
     medicine = db.get(Medicine, medicine_id)
     if medicine is None:
@@ -215,7 +215,7 @@ def receive_batch(
 @router.get("/alerts/low-stock", response_model=list[LowStockItem])
 def low_stock_alerts(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("pharmacy:read")),
 ):
     totals = _total_quantity_subquery(db)
     rows = (
@@ -244,7 +244,7 @@ def low_stock_alerts(
 def expiring_alerts(
     days: int = Query(default=30, ge=1, le=365),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("pharmacy:read")),
 ):
     cutoff = date.today() + timedelta(days=days)
     rows = (
@@ -274,7 +274,7 @@ def create_dispense(
     payload: DispenseCreate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("pharmacy:dispense")),
 ):
     if db.get(Patient, payload.patient_id) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
@@ -339,7 +339,7 @@ def list_dispenses(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("pharmacy:read")),
 ):
     query = db.query(Dispense)
     if patient_id is not None:
@@ -354,7 +354,7 @@ def list_dispenses(
 def get_dispense(
     dispense_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("pharmacy:read")),
 ):
     dispense = (
         db.query(Dispense)

@@ -11,6 +11,7 @@ import {
   CalendarOutlined,
   AccountBookOutlined,
   IdcardOutlined,
+  HeartOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { listPatients, getPatient, grantPortalAccess, type PatientListItem } from "./patientsApi";
@@ -42,6 +43,8 @@ export default function PatientsPage() {
   const pharmacyEnabled = getModules().some((m) => m.id === "pharmacy");
   // Same reasoning as the others - Appointments is also optional.
   const appointmentsEnabled = getModules().some((m) => m.id === "appointments");
+  // Same reasoning as the others - IPD is also optional.
+  const ipdEnabled = getModules().some((m) => m.id === "ipd");
   const [q, setQ] = useState("");
   const debouncedQ = useDebouncedValue(q, 300);
   const [page, setPage] = useState(1);
@@ -50,6 +53,9 @@ export default function PatientsPage() {
   const { message } = AntApp.useApp();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPatientId, setEditingPatientId] = useState<number | null>(null);
+  const canWrite = useCan("patients:write");
+  const canWriteBilling = useCan("billing:write");
+  const canWriteIpd = useCan("ipd:write");
   const [portalAccessPatientId, setPortalAccessPatientId] = useState<number | null>(null);
   const [portalAccessForm] = Form.useForm<{ email: string }>();
 
@@ -140,7 +146,8 @@ export default function PatientsPage() {
                   (opdEnabled ? 40 : 0) +
                   (labEnabled ? 40 : 0) +
                   (pharmacyEnabled ? 40 : 0) +
-                  (appointmentsEnabled ? 40 : 0),
+                  (appointmentsEnabled ? 40 : 0) +
+                  (ipdEnabled ? 40 : 0),
                 render: (_, p) => (
                   <Space size={4}>
                     <Button type="text" icon={<EditOutlined />} onClick={() => setEditingPatientId(p.patient_id)} />
@@ -151,6 +158,7 @@ export default function PatientsPage() {
                       type="text"
                       icon={<AccountBookOutlined />}
                       title="New Bill"
+                      disabled={!canWriteBilling}
                       onClick={() => navigate(`/billing/new?patient=${p.patient_id}`)}
                     />
                     <Button
@@ -189,6 +197,15 @@ export default function PatientsPage() {
                         icon={<ShopOutlined />}
                         title="Dispense Medicine"
                         onClick={() => navigate(`/pharmacy/dispense?patient=${p.patient_id}`)}
+                      />
+                    )}
+                    {ipdEnabled && (
+                      <Button
+                        type="text"
+                        icon={<HeartOutlined />}
+                        title="Admit Patient"
+                        disabled={!canWriteIpd}
+                        onClick={() => navigate(`/ipd/admit?patient=${p.patient_id}`)}
                       />
                     )}
                   </Space>

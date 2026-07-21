@@ -9,10 +9,12 @@ import {
   getPatient,
   type ConsultationListItem,
 } from "./opdApi";
+import { useCan } from "./useCan";
 
 export default function ConsultationsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const canWrite = useCan("consultation:write");
   const patientFilter = searchParams.get("patient");
   const patientIdNum = patientFilter ? Number(patientFilter) : undefined;
 
@@ -62,6 +64,7 @@ export default function ConsultationsPage() {
           <Button
             type="primary"
             icon={<PlusOutlined />}
+            disabled={!canWrite}
             onClick={() => navigate(patientIdNum ? `/opd/new?patient=${patientIdNum}` : "/opd/new")}
           >
             New Consultation

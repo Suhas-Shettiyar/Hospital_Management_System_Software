@@ -8,7 +8,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.audit.service import record_audit
-from app.core.auth.dependencies import get_current_user
+from app.core.auth.dependencies import require
 from app.core.auth.models import User
 from app.core.billing_engine.models import Bill, BillItem, BillStatus, Payment, PaymentMode
 from app.core.billing_engine.schemas import (
@@ -50,7 +50,7 @@ def create_bill(
     payload: BillCreate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("billing:write")),
 ):
     if db.get(Patient, payload.patient_id) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
@@ -78,7 +78,7 @@ def list_bills(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("billing:read")),
 ):
     query = db.query(Bill)
     if patient_id is not None:
@@ -95,7 +95,7 @@ def list_bills(
 def get_bill(
     bill_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("billing:read")),
 ):
     return _get_bill_or_404(db, bill_id)
 
@@ -106,7 +106,7 @@ def add_item(
     payload: BillItemCreate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("billing:write")),
 ):
     bill = _get_bill_or_404(db, bill_id)
     if bill.status != BillStatus.DRAFT:
@@ -151,7 +151,7 @@ def remove_item(
     item_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("billing:write")),
 ):
     bill = _get_bill_or_404(db, bill_id)
     if bill.status != BillStatus.DRAFT:
@@ -182,7 +182,7 @@ def finalize_bill(
     bill_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("billing:write")),
 ):
     bill = _get_bill_or_404(db, bill_id)
     if bill.status != BillStatus.DRAFT:
@@ -208,7 +208,7 @@ def cancel_bill(
     bill_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("billing:write")),
 ):
     bill = _get_bill_or_404(db, bill_id)
     if bill.status not in (BillStatus.DRAFT, BillStatus.FINALIZED):
@@ -234,7 +234,7 @@ def record_payment(
     payload: PaymentCreate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("billing:collect")),
 ):
     if payload.mode not in PaymentMode.ALL:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Invalid payment mode '{payload.mode}'")
@@ -277,7 +277,7 @@ def record_payment(
 def daily_report(
     on_date: date = Query(alias="date", default_factory=date.today),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("reports:view")),
 ):
     day_start = datetime.combine(on_date, datetime.min.time())
     day_end = day_start + timedelta(days=1)
