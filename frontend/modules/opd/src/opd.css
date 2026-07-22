@@ -33,13 +33,13 @@
 }
 .opd-quick-pick:hover {
   background: var(--success-bg, #E7F5EE) !important;
-  color: var(--brand-primary, #0E6F64) !important;
+  color: var(--brand-primary, #414833) !important;
   border-color: transparent !important;
 }
 
 .opd-rx-line {
   padding: 8px 0;
-  border-bottom: 1px solid var(--gray-100, #F1F3F6);
+  border-bottom: 1px solid var(--gray-100, #f5f0e6);
 }
 .opd-rx-line:last-child { border-bottom: none; }
 
@@ -52,12 +52,12 @@
   gap: 12px;
   padding: 12px 24px;
   margin-top: 16px;
-  background: #FFFFFF;
+  background: #f5f0e6;
   box-shadow: 0 -4px 16px rgba(16, 24, 32, 0.08);
   border-radius: var(--radius-card, 12px);
 }
 [data-theme="dark"] .opd-footer-bar {
-  background: var(--gray-100, #242A36);
+  background: var(--gray-100, #262b1b);
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.5);
 }
 
