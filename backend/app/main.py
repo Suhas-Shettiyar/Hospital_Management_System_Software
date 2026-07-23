@@ -2,16 +2,36 @@
 
 Run with:  uvicorn app.main:app --reload
 """
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.config import settings
-from app.database import engine
+from app.database import engine, SessionLocal
+from app.core.module_registry.seed import seed_default_modules
 from app.api.health import router as health_router
 from app.modules.example_hello.router import router as example_hello_router
 
-app = FastAPI(title=settings.app_name, version=settings.app_version)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Seed module_registry with any known packages not yet in the table.
+    # Best-effort: the app should still start even if the DB isn't up yet,
+    # consistent with the rest of the app's lazy-DB-connection approach.
+    try:
+        db = SessionLocal()
+        try:
+            seed_default_modules(db)
+        finally:
+            db.close()
+    except Exception as exc:  # noqa: BLE001 - don't block startup on a DB hiccup
+        print(f"[startup] module_registry seeding skipped: {exc}")
+    yield
+
+
+app = FastAPI(title=settings.app_name, version=settings.app_version, lifespan=lifespan)
 
 # Allow the Vite dev server (and later, the deployed frontend) to call this API.
 app.add_middleware(

@@ -14,6 +14,30 @@ Every session should start by reading the latest entries here, and end by adding
 
 ## Log
 
+### 2026-07-16 (much later) — Stage 1 of "Core Platform + Package Framework" complete: DB schema + Alembic
+Entered plan mode to scope this properly since it's a multi-week roadmap phase; agreed to split it into stages and build only Stage 1 now (schema + Alembic). Plan saved at `C:\Users\Lenovo\.claude\plans\sprightly-wondering-fiddle.md`.
+
+**Built:**
+- Alembic properly initialized for the first time (`backend/alembic.ini`, `backend/alembic/env.py` wired to `app.config.settings` for the DB URL and `app.database.Base.metadata` for autogenerate; `compare_type`/`compare_server_default` enabled; chronological migration filenames via `file_template`).
+- Five new SQLAlchemy 2.0-style (`Mapped`/`mapped_column`) models, filling in the previously-empty `app/core/{auth,patients,audit,billing_engine}/` folders plus a new `app/core/module_registry/`:
+  - `users` + `auth_tokens` (`app/core/auth/models.py`) — custom JWT foundation; `auth_tokens` handles both password-reset and email-verification via a `purpose` column, storing only a hash of the token.
+  - `patients` (`app/core/patients/models.py`) — uhid, optional ABHA fields, demographics, consent_status.
+  - `audit_log` (`app/core/audit/models.py`) — append-only, enforced by a **Postgres trigger** (not just app discipline) that raises an exception on any UPDATE or DELETE. Tested directly with `psql`: INSERT succeeded, UPDATE and DELETE were both correctly rejected.
+  - `module_registry` (new `app/core/module_registry/`) — tracks which department packages exist/are enabled; will be what the future plugin loader reads from.
+  - `bills` (`app/core/billing_engine/models.py`) — bare ledger skeleton only (patient, status, total) — full billing logic is a much later phase.
+  - Design convention used throughout: enums stored as `native_enum=False` (text + CHECK constraint) since Postgres native enums can't have values added inside a transaction, and this project will keep adding roles/statuses as new department packages land. Money columns use `Numeric(12,2)`, never `Float`.
+- `app/core/__init__.py` now aggregates all core models (single import point Alembic autogenerate needs).
+- First migration generated, hand-reviewed, and finished (added the audit_log trigger SQL to `upgrade()`/`downgrade()`). Applied successfully to the Docker Postgres (port 5433): all 6 tables + `alembic_version` confirmed via `psql \dt`. Full `alembic downgrade base` → `alembic upgrade head` round-trip tested clean.
+- A small startup seeding routine (`app/core/module_registry/seed.py`, called from a new FastAPI `lifespan` handler in `main.py`) that inserts a `module_registry` row for any known package manifest not yet present — idempotent, never overwrites existing rows. Verified: `example_hello` got seeded correctly (`enabled=false`, since it's not in the default `enabled_modules` config list, which is meant for real department packages).
+- Backend restarted and re-verified: `/health` still reports `"database":"connected"`, app boots cleanly with no seeding errors.
+- Housekeeping: fixed `backend/app/auth_notes.md` and a line in `backend/README.md`'s structure diagram that still described adopting `fastapi-users` (stale, contradicted the custom-JWT decision).
+
+**Explicitly NOT built yet (future stages, in order):** Stage 2 = actual JWT login/register/password-reset/verify-email endpoints. Stage 3 = the real `pluggy`-based loader that reads `module_registry` and dynamically mounts/unmounts routers (today `main.py` still statically includes `example_hello`'s router regardless of its `enabled` flag). Stage 4 = frontend Vite Module Federation.
+
+**Not committed yet** — need to review `git status` and confirm before staging/pushing.
+
+---
+
 ### 2026-07-16 (later still, post-Phase-1) — Major architecture reversal: full plugin system confirmed
 Read both roadmap PDFs in `project-docs/` (`HMS_Complete_Roadmap.pdf`, `HMS_Technical_Roadmap.pdf`) to scope "next phase." Found a real conflict: `HMS_Technical_Roadmap.pdf` specifies a genuine **plugin architecture** (Odoo-style) — per-department Python wheels, own DB schemas, `pluggy`/entry-points runtime loader, `module_registry` table, `module.json` manifests, Vite Module Federation on the frontend, a self-hosted Gitea package registry, and an in-app "Module Store" UI. This directly contradicts the original brief's "feature flags, NOT a runtime plugin system" decision that Phase 1 (Tasks 1-7) was built around.
 
