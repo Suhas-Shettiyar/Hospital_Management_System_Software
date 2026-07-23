@@ -2,7 +2,14 @@ import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Typography, Input, Button, Table, Tag, Drawer, Descriptions, Space, Card } from "antd";
-import { PlusOutlined, EditOutlined, MedicineBoxOutlined, ExperimentOutlined } from "@ant-design/icons";
+import {
+  PlusOutlined,
+  EditOutlined,
+  MedicineBoxOutlined,
+  ExperimentOutlined,
+  ShopOutlined,
+  CalendarOutlined,
+} from "@ant-design/icons";
 import dayjs from "dayjs";
 import { listPatients, getPatient, type PatientListItem } from "./patientsApi";
 import PatientFormModal from "./PatientFormModal";
@@ -29,6 +36,10 @@ export default function PatientsPage() {
   const opdEnabled = getModules().some((m) => m.id === "opd");
   // Same reasoning as opdEnabled - Lab is also an optional department package.
   const labEnabled = getModules().some((m) => m.id === "lab");
+  // Same reasoning as opdEnabled/labEnabled - Pharmacy is also optional.
+  const pharmacyEnabled = getModules().some((m) => m.id === "pharmacy");
+  // Same reasoning as the others - Appointments is also optional.
+  const appointmentsEnabled = getModules().some((m) => m.id === "appointments");
   const [q, setQ] = useState("");
   const debouncedQ = useDebouncedValue(q, 300);
   const [page, setPage] = useState(1);
@@ -110,10 +121,23 @@ export default function PatientsPage() {
               },
               {
                 title: "",
-                width: 48 + (opdEnabled ? 40 : 0) + (labEnabled ? 40 : 0),
+                width:
+                  48 +
+                  (opdEnabled ? 40 : 0) +
+                  (labEnabled ? 40 : 0) +
+                  (pharmacyEnabled ? 40 : 0) +
+                  (appointmentsEnabled ? 40 : 0),
                 render: (_, p) => (
                   <Space size={4}>
                     <Button type="text" icon={<EditOutlined />} onClick={() => setEditingPatientId(p.patient_id)} />
+                    {appointmentsEnabled && (
+                      <Button
+                        type="text"
+                        icon={<CalendarOutlined />}
+                        title="Book Appointment"
+                        onClick={() => navigate(`/appointments/new?patient=${p.patient_id}`)}
+                      />
+                    )}
                     {opdEnabled && (
                       <Button
                         type="text"
@@ -128,6 +152,14 @@ export default function PatientsPage() {
                         icon={<ExperimentOutlined />}
                         title="Order Lab Test"
                         onClick={() => navigate(`/lab/new?patient=${p.patient_id}`)}
+                      />
+                    )}
+                    {pharmacyEnabled && (
+                      <Button
+                        type="text"
+                        icon={<ShopOutlined />}
+                        title="Dispense Medicine"
+                        onClick={() => navigate(`/pharmacy/dispense?patient=${p.patient_id}`)}
                       />
                     )}
                   </Space>

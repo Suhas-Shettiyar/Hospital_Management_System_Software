@@ -1,5 +1,6 @@
 """Lab order/result endpoints - a real toggleable department package."""
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.audit.service import record_audit
@@ -7,13 +8,14 @@ from app.core.auth.dependencies import get_current_user
 from app.core.auth.models import User
 from app.core.patients.models import Patient
 from app.database import get_db
-from app.modules.lab.models import LabOrder, LabOrderStatus, LabResult
+from app.modules.lab.models import LabOrder, LabOrderStatus, LabResult, LabTestCatalog
 from app.modules.lab.schemas import (
     LabOrderCreate,
     LabOrderListItem,
     LabOrderOut,
     LabOrderSearchResponse,
     LabResultIn,
+    LabTestCatalogSearchResponse,
 )
 from app.modules.opd.models import Consultation
 
@@ -48,11 +50,33 @@ def create_order(
         if consult.patient_id != payload.patient_id:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Consultation does not belong to this patient")
 
+    # Two ways to name a test: a catalog entry (preferred - canonical
+    # loinc_code/test_name, denormalized onto the order at creation time) or
+    # the free-text fallback. Client-supplied test_code/test_name are ignored
+    # when catalog_id is given, so the order always reflects what the
+    # catalog said at order time, not whatever the client happened to send.
+    if payload.catalog_id is not None:
+        catalog_entry = (
+            db.query(LabTestCatalog)
+            .filter(LabTestCatalog.catalog_id == payload.catalog_id, LabTestCatalog.is_active.is_(True))
+            .first()
+        )
+        if catalog_entry is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Catalog test not found")
+        test_code = catalog_entry.loinc_code
+        test_name = catalog_entry.test_name
+    else:
+        if not payload.test_name:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "test_name is required when no catalog_id is given")
+        test_code = payload.test_code
+        test_name = payload.test_name
+
     order = LabOrder(
         patient_id=payload.patient_id,
         consult_id=payload.consult_id,
-        test_code=payload.test_code,
-        test_name=payload.test_name,
+        catalog_id=payload.catalog_id,
+        test_code=test_code,
+        test_name=test_name,
         ordered_by=current_user.user_id,
     )
     db.add(order)
@@ -69,6 +93,23 @@ def create_order(
     db.commit()
     db.refresh(order)
     return order
+
+
+@router.get("/catalog", response_model=LabTestCatalogSearchResponse)
+def search_catalog(
+    q: str = Query(default=""),
+    limit: int = Query(default=20, ge=1, le=50),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    query = db.query(LabTestCatalog).filter(LabTestCatalog.is_active.is_(True))
+    if q:
+        like = f"%{q}%"
+        query = query.filter(or_(LabTestCatalog.test_name.ilike(like), LabTestCatalog.loinc_code.ilike(like)))
+
+    total = query.count()
+    items = query.order_by(LabTestCatalog.test_name).limit(limit).all()
+    return LabTestCatalogSearchResponse(items=items, total=total)
 
 
 @router.get("/orders", response_model=LabOrderSearchResponse)
@@ -102,7 +143,7 @@ def get_order(
 ):
     order = (
         db.query(LabOrder)
-        .options(selectinload(LabOrder.result))
+        .options(selectinload(LabOrder.result), selectinload(LabOrder.catalog))
         .filter(LabOrder.order_id == order_id)
         .first()
     )

@@ -19,6 +19,8 @@ import app.core  # noqa: E402,F401 - side effect: registers all core models on B
 # list philosophy as everywhere else in this plugin system.
 import app.modules.opd.models  # noqa: E402,F401
 import app.modules.lab.models  # noqa: E402,F401
+import app.modules.pharmacy.models  # noqa: E402,F401
+import app.modules.appointments.models  # noqa: E402,F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
