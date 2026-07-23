@@ -6,7 +6,17 @@
     <title>MedCore HMS</title>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- #root itself must stay unstyled: React's render() only replaces its
+         CHILDREN, not its own attributes, so any style put directly on #root
+         would persist underneath the real app after render() runs. The
+         loading indicator is a child div instead, entirely replaced the
+         moment bootstrap.tsx's render() runs (modules/remotes load
+         asynchronously before the app can render). No React needed here. -->
+    <div id="root">
+      <div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#888;">
+        Loading MedCore HMS…
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

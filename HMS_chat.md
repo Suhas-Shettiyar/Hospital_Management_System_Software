@@ -14,6 +14,37 @@ Every session should start by reading the latest entries here, and end by adding
 
 ## Log
 
+### 2026-07-16 (final, this session) — Stage 4 complete: frontend Module Federation — Phase 1 finished
+Planned via plan mode. **Key deviation from the roadmap doc, with reasoning:** used `@module-federation/vite` instead of the roadmap-named `@originjs/vite-plugin-federation` — the latter hasn't released in over a year while this project already runs a newer Vite; the former is the official plugin "recommended by Vite and VoidZero," updated the day before this work. Verified its core API against docs before committing to the plan.
+
+**Built:**
+- New backend endpoint `GET /api/modules` (`backend/app/core/module_registry/{router,schemas}.py`, mounted as core/always-on) — exposes the real `module_registry` DB state, since the frontend needs the actual truth, not the static `enabled_modules` config list.
+- New frontend project `frontend/modules/example-hello/` — a separate Vite project (port 5174), the frontend mirror of the backend's `example_hello`. Exposes one `HmsModule`-shaped object via federation (`exposes: { "./module": "./src/module.tsx" }`). Has its own standalone preview (`main.tsx`/`index.html`) so it can be worked on without the host running.
+- `frontend/web-shell/vite.config.ts` — added `federation()` host config, `remotes: { example_hello_remote: ... }`, `shared: { singleton: true }` for react/react-dom/react-router-dom/antd/@tanstack/react-query (all genuinely stateful/context-based; `@ant-design/icons`/`dayjs` deliberately not shared).
+- Solved a real sync/async sequencing problem: `router.tsx` singleton → `createAppRouter()` factory; `main.tsx` trimmed to a two-line trampoline (`import("./bootstrap")`); new `bootstrap.tsx` does register-core → fetch-enabled-modules → load-remotes → *then* build router and render; `App.tsx` now takes `router` as a prop.
+- New `modules/loadRemoteModules.ts` (one named async loader per remote — literal import specifiers required for federation's build-time analysis, not a data-driven loop) and `lib/moduleRegistryApi.ts` (fetches `/api/modules`, degrades to an empty Set on any failure/timeout).
+
+**Housekeeping found and fixed along the way:**
+- `frontend/web-shell/package-lock.json` had entries resolving to a private corporate registry (`elilillyco.jfrog.io`) — leftover contamination from whatever machine originally generated it, blocking all installs on this machine. Regenerated cleanly from the public npm registry.
+- Added `*.tsbuildinfo` and `.mf/` (Module Federation's own diagnostics cache) to `.gitignore` — neither was covered before.
+
+**Real bug caught by actually running the app in a browser (not just type-checking):** the loading-state markup in `index.html` put inline flex-centering styles directly on the `#root` div. React's `render()` only replaces `#root`'s *children*, not its own attributes, so those styles persisted underneath the real app afterward, squeezing the Sidebar to near-zero width. Confirmed via a git-stash A/B test against the Stage-3 baseline (which rendered perfectly) that this was a genuine regression, not a pre-existing issue. Fixed by moving the loading indicator into a child div, leaving `#root` itself unstyled.
+
+**Live verification (used Playwright via a throwaway Node script, since no browser-automation tool was pre-configured in this environment):**
+1. Host boots fine with the remote's dev server not running yet — login page renders correctly, no crash.
+2. Logged in (demo `AuthProvider` accepts anything) — sidebar shows only "Dashboard" (module disabled by default, matching Stage 3's seeding).
+3. Started the remote, `module_registry.enabled` still false — sidebar still correctly excludes "Example Hello."
+4. `UPDATE module_registry SET enabled = true` + refresh (no restart needed on the frontend side — it re-checks `/api/modules` live) — "Example Hello" appeared in the sidebar, its route rendered, and its antd Tag/Card visually matched the host's teal/marigold theme exactly, proving `react`/`antd`/`react-router-dom` singleton sharing actually worked.
+5. Disabled again — correctly disappeared. Enabled again but stopped the remote's dev server entirely — app still booted fine (just Dashboard), console showed the friendly `[loadRemoteModules] "example_hello" failed to load; continuing without it` message, no crash.
+
+Reset test data/DB state back to original (`example_hello` disabled) and stopped all test servers afterward.
+
+**This completes "Core Platform + Package Framework"** — all 4 stages (DB schema, JWT auth, backend plugin loader, frontend module federation) are done. **Not committed yet** — need to review `git status` and confirm before staging/pushing.
+
+**What's next:** real department packages (OPD, lab, pharmacy, etc.) can now be built using this loader/federation pattern on both sides. The frontend's fake `AuthProvider.tsx` login stub still needs wiring to the real `/api/auth/*` endpoints from Stage 2 — that's the natural next piece of work.
+
+---
+
 ### 2026-07-16 (later again) — Stage 3 complete: real pluggy-based plugin loader
 Planned via plan mode (new plan, previous one overwritten). Two design decisions made and documented: (1) enable/disable takes effect on **restart, not instantly** — the loader decides what to mount once at startup by reading `module_registry`, no live hot-toggle/route-hiding; (2) package discovery stays a **hardcoded list** for now (`KNOWN_PACKAGE_MODULES` in `loader.py`), not real Python `entry_points` — those need separately-installable packages, appropriate for the much-later Module Store/Gitea phase, not while everything lives in one repo.
 
