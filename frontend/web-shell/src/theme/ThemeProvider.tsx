@@ -34,16 +34,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty("--brand-accent", isDark ? brand.accentDark : brand.accent);
     root.style.setProperty("--brand-accent-dark", brand.accentDark);
     root.style.setProperty("--brand-accent-soft", isDark ? brand.accentSoftDark : brand.accentSoft);
+    // Gold — the one warm hue against the sage palette, reserved for CTAs,
+    // the active-nav rail, and anything that needs to visually pop.
+    root.style.setProperty("--brand-gold", isDark ? brand.goldDark : brand.gold);
+    root.style.setProperty("--brand-gold-hover", brand.goldHover);
+    root.style.setProperty("--brand-gold-soft", isDark ? brand.goldSoftDark : brand.goldSoft);
     root.style.setProperty(
       "--brand-glow",
       isDark
-        ? `radial-gradient(circle at 30% 30%, ${brand.primaryDarkHover}, ${brand.primaryDark})`
-        : `radial-gradient(circle at 30% 30%, ${brand.primaryHover}, ${brand.primary})`
+        ? `radial-gradient(circle at 30% 30%, ${brand.goldDark}, ${brand.gold})`
+        : `radial-gradient(circle at 30% 30%, ${brand.gold}, ${brand.goldHover})`
     );
     root.style.setProperty("--success-bg", isDark ? brand.successSoftDark : brand.successSoft);
     root.style.setProperty("--warning-bg", isDark ? brand.warningSoftDark : brand.warningSoft);
     root.style.setProperty("--info-color", isDark ? brand.infoDark : brand.info);
-    // Fixed deep Pine Tree for large solid-fill bands that hold white text
+    // Fixed deep Feldgrau for large solid-fill bands that hold white text
     // (sidebar, landing hero/closing, login modal) — deliberately NOT
     // mode-dependent, since brand.primary itself stays a lighter usable
     // mid-tone for buttons and icons.

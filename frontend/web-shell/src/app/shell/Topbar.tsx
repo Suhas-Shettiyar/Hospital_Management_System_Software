@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import GlobalSearch from "./GlobalSearch";
 import { useThemeMode } from "../../theme/ThemeProvider";
 import { useAuth } from "../../features/auth/AuthProvider";
+import { useCan } from "../../features/auth/useCan";
 
 interface TopbarProps {
   sidebarCollapsed: boolean;
@@ -14,6 +15,10 @@ export default function Topbar({ sidebarCollapsed, onExpandSidebar }: TopbarProp
   const { mode, toggle } = useThemeMode();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  // GlobalSearch calls the patients:read-gated /api/patients endpoint - a
+  // role without that permission (e.g. a patient-portal login) would only
+  // get a useless always-empty/403'ing search box, so hide it entirely.
+  const canSearchPatients = useCan("patients:read");
 
   return (
     <Layout.Header className="topbar">
@@ -24,7 +29,7 @@ export default function Topbar({ sidebarCollapsed, onExpandSidebar }: TopbarProp
           <Button type="text" aria-label="Show navigation" icon={<MenuUnfoldOutlined />} onClick={onExpandSidebar} />
         </Tooltip>
       )}
-      <div className="topbar-search"><GlobalSearch /></div>
+      <div className="topbar-search">{canSearchPatients && <GlobalSearch />}</div>
       <Space size="middle" align="center">
         <Tooltip title={mode === "dark" ? "Switch to light" : "Switch to dark"}>
           <Button

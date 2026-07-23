@@ -19,4 +19,5 @@ export const labModule: HmsModule = {
     { path: "/lab", label: "Lab Orders" },
     { path: "/lab/new", label: "New Lab Order" },
   ],
+  permissions: ["lab:read"],
 };

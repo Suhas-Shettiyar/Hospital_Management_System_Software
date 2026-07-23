@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Typography, Card, Tabs, Table, Tag, Space, Empty } from "antd";
+import { Typography, Card, Tabs, Table, Tag, Drawer } from "antd";
 import dayjs from "dayjs";
 import {
   listMyConsultations,
@@ -19,41 +20,59 @@ const BILL_STATUS_COLOR: Record<BillStatus, string> = {
 
 function ConsultationsTab() {
   const { data, isLoading } = useQuery({ queryKey: ["portal", "consultations"], queryFn: listMyConsultations });
-
-  if (!isLoading && (data?.items.length ?? 0) === 0) {
-    return <Empty description="No consultations yet" />;
-  }
+  const [detail, setDetail] = useState<Consultation | null>(null);
 
   return (
-    <Space direction="vertical" style={{ width: "100%" }} size="middle">
-      {(data?.items ?? []).map((c: Consultation) => (
-        <Card key={c.consult_id} size="small" title={dayjs(c.consult_date).format("DD MMM YYYY")}>
-          <p><strong>Chief complaint:</strong> {c.chief_complaint}</p>
-          <p><strong>Diagnosis:</strong> {c.diagnosis_text}{c.diagnosis_code ? ` (${c.diagnosis_code})` : ""}</p>
-          {c.notes && <p><strong>Notes:</strong> {c.notes}</p>}
-          {c.prescription ? (
-            <>
-              <strong>Prescription</strong>
-              {c.prescription.instructions && <p>{c.prescription.instructions}</p>}
-              <Table
-                size="small"
-                rowKey="item_id"
-                pagination={false}
-                dataSource={c.prescription.items}
-                columns={[
-                  { title: "Medicine", dataIndex: "med_name" },
-                  { title: "Dose", dataIndex: "dose" },
-                  { title: "Frequency", dataIndex: "frequency" },
-                  { title: "Duration", dataIndex: "duration" },
-                ]}
-              />
-            </>
-          ) : (
-            <Typography.Text type="secondary">Advice only - no medicines prescribed.</Typography.Text>
-          )}
-        </Card>
-      ))}
-    </Space>
+    <>
+      <Table<Consultation>
+        rowKey="consult_id"
+        loading={isLoading}
+        dataSource={data?.items ?? []}
+        pagination={false}
+        locale={{ emptyText: "No consultations yet" }}
+        onRow={(record) => ({ onClick: () => setDetail(record), style: { cursor: "pointer" } })}
+        columns={[
+          { title: "Date", dataIndex: "consult_date", render: (d: string) => dayjs(d).format("DD MMM YYYY") },
+          { title: "Chief complaint", dataIndex: "chief_complaint" },
+          { title: "Diagnosis", dataIndex: "diagnosis_text" },
+          {
+            title: "Prescription",
+            render: (_, c) => (c.prescription ? <Tag color="success">Prescribed</Tag> : <Tag>Advice only</Tag>),
+          },
+        ]}
+      />
+
+      <Drawer title="Consultation Details" open={!!detail} onClose={() => setDetail(null)} width={480}>
+        {detail && (
+          <>
+            <p><strong>Date:</strong> {dayjs(detail.consult_date).format("DD MMM YYYY")}</p>
+            <p><strong>Chief complaint:</strong> {detail.chief_complaint}</p>
+            <p><strong>Diagnosis:</strong> {detail.diagnosis_text}{detail.diagnosis_code ? ` (${detail.diagnosis_code})` : ""}</p>
+            {detail.notes && <p><strong>Notes:</strong> {detail.notes}</p>}
+            {detail.prescription ? (
+              <>
+                <strong>Prescription</strong>
+                {detail.prescription.instructions && <p>{detail.prescription.instructions}</p>}
+                <Table
+                  size="small"
+                  rowKey="item_id"
+                  pagination={false}
+                  dataSource={detail.prescription.items}
+                  columns={[
+                    { title: "Medicine", dataIndex: "med_name" },
+                    { title: "Dose", dataIndex: "dose" },
+                    { title: "Frequency", dataIndex: "frequency" },
+                    { title: "Duration", dataIndex: "duration" },
+                  ]}
+                />
+              </>
+            ) : (
+              <Typography.Text type="secondary">Advice only - no medicines prescribed.</Typography.Text>
+            )}
+          </>
+        )}
+      </Drawer>
+    </>
   );
 }
 

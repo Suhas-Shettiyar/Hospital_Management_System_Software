@@ -4,9 +4,6 @@ Kept free of FastAPI imports so it stays a plain, unit-testable mapping that
 any module - or a future user-seeding CLI - can import without pulling in
 web-framework code. The FastAPI enforcement dependency lives in
 dependencies.py and is built on top of permissions_for().
-
-PATIENT is intentionally absent: it's reserved for the future patient-portal
-login (Section 5.9) and carries no staff permissions.
 """
 from app.core.auth.models import UserRole
 
@@ -61,6 +58,16 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "pharmacy:read",
         "billing:read", "billing:write", "billing:collect",
         "reports:view",
+    },
+    # A patient portal login carries exactly one permission - it never grants
+    # any staff-facing permission (patients:read, billing:read, etc.), since
+    # a patient's own-record access is enforced separately by identity
+    # (Consultation.patient_id == current_user.patient_id, not a role check)
+    # in app/core/patient_portal/router.py. This entry exists so the
+    # frontend sidebar can show "My Records"/"My Appointments" the same way
+    # every other role's modules are shown, instead of a bespoke shell.
+    UserRole.PATIENT: {
+        "portal:self",
     },
 }
 

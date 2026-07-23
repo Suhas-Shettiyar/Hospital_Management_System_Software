@@ -19,4 +19,5 @@ export const pharmacyModule: HmsModule = {
     { path: "/pharmacy", label: "Medicines" },
     { path: "/pharmacy/dispense", label: "Dispense" },
   ],
+  permissions: ["pharmacy:read"],
 };
