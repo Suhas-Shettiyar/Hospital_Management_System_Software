@@ -14,6 +14,21 @@ Every session should start by reading the latest entries here, and end by adding
 
 ## Log
 
+### 2026-07-18 (latest) — Frontend visual redesign: theme, landing page, modal login, earthy palette
+Iterative design pass on `frontend/web-shell` only (backend and the OPD remote module were untouched — those are separate in-progress work, left uncommitted here on purpose). Went through several rounds of user feedback before landing on the final direction; summarizing the end state rather than every intermediate attempt.
+
+**Design system (`theme/tokens.ts`, `theme/ThemeProvider.tsx`):** introduced a real token architecture — gray/neutral scale, shadow scale (xs/sm/md/lg), spacing scale, border-radius scale, motion durations/easing — feeding Ant Design's `ConfigProvider` for light and dark mode. Self-hosted `Inter` via `@fontsource/inter` (previous font stack was declared in CSS but never actually loaded — a real, if minor, pre-existing bug this fixed as a side effect). Final palette: **Pine Tree** (deep green, `#1B4332`/`#2D6A4F`) as the structural anchor color (sidebar fill, landing hero/closing bands, login modal chrome, buttons/icons), **Khaki Green** (`#8A9A5B`) as the sparing accent, **Macaron** (soft pastel mint) for selected/highlighted states, and a **Misty** grey-green neutral scale for all text/borders/backgrounds. Went through a teal+marigold → lavender+blush → Pine/Khaki/Macaron/Misty progression based on direct user feedback each round; earlier variants (an EKG-line background texture, drifting "aurora" gradient blobs) were tried and explicitly rejected as looking dull/odd and were removed in favor of flat, calm surface tints (`.surface-tint`, `.surface-brand` classes in `index.css`).
+
+**New public landing page** (`features/landing/LandingPage.tsx`, `RootGate.tsx`): `/` is now a real marketing-style landing page (nav, hero, 4-card feature grid describing what the app actually does — patient records, OPD workflow, consent/audit, modular growth — closing CTA, footer) for anonymous visitors; `RootGate` sends already-authenticated visitors straight to `/dashboard`. Login moved from a standalone `/login` page (now deleted) to a `LoginModal.tsx`, opened **only on click** from one of the "Sign in" buttons — no auto-open behavior, per explicit user correction.
+
+**Shell changes** (`app/shell/AppShell.tsx`, `Sidebar.tsx`, `Topbar.tsx`, `app/router.tsx`): sidebar collapse now fully hides the sidebar (not just icon-only) — collapsed state was lifted up into `AppShell` so the show-navigation trigger can live in the `Topbar` (which stays on screen) instead of disappearing with the sidebar. `ProtectedRoute`'s bounce-when-signed-out target changed from `/login` to `/`, and sign-out now lands on the landing page instead of a dead route.
+
+**Dashboard/Patients polish** (`DashboardPage.tsx`, `PatientsPage.tsx`): stat cards got icon badges and now actually animate in via the pre-existing but previously-unused `lib/useCountUp.ts` hook; Patients page search/table wrapped in an elevated card; a hardcoded literal `color="green"` Tag was swapped for the semantic `success` token so it stays in sync with future palette changes.
+
+**Not committed in this pass (left for teammate/next session):** `backend/app/core/opd/`, `backend/app/modules/opd/*`, the OPD alembic migration, `backend/app/core/patients/service_mine.py`, and the entire `frontend/modules/opd/` remote module — all untracked in git status and appear to be separate in-progress OPD feature work, not part of this design task. Check those against what's already on `main` before assuming they're stale.
+
+---
+
 ### 2026-07-18 (later) — Patient registration + search (core feature, prerequisite for OPD)
 Planned via plan mode. Started the "OPD" work by first building patients, since consultations need a real patient to attach to and the `patients` table (Stage 1) had zero endpoints/UI. This is a **core** feature (always-on, alongside auth/audit/billing) - not a toggleable department package, so it doesn't go through the Stage 3 plugin loader or Stage 4 Module Federation.
 

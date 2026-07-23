@@ -15,7 +15,7 @@ interface AuthCtx {
   user: User | null;
   /** True only while restoring a session from a stored token on first load -
    * ProtectedRoute waits for this before deciding to redirect, so a valid
-   * refreshed session isn't bounced to /login before the check completes. */
+   * refreshed session isn't bounced to "/" before the check completes. */
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Typography, Input, Button, Table, Tag, Drawer, Descriptions, Space } from "antd";
+import { Typography, Input, Button, Table, Tag, Drawer, Descriptions, Space, Card } from "antd";
 import { PlusOutlined, EditOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { listPatients, getPatient, type PatientListItem } from "./patientsApi";
@@ -61,52 +61,54 @@ export default function PatientsPage() {
         <Typography.Text type="secondary">Register and search patient records</Typography.Text>
       </div>
 
-      <Space style={{ marginBottom: 16, width: "100%", justifyContent: "space-between" }}>
-        <Input.Search
-          allowClear
-          placeholder="Search by name, phone, or UHID"
-          style={{ maxWidth: 360 }}
-          onChange={(e) => {
-            setQ(e.target.value);
-            setPage(1);
-          }}
-        />
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
-          New Patient
-        </Button>
-      </Space>
+      <Card className="hoverable-lift" styles={{ body: { padding: 20 } }}>
+        <Space style={{ marginBottom: 16, width: "100%", justifyContent: "space-between" }}>
+          <Input.Search
+            allowClear
+            placeholder="Search by name, phone, or UHID"
+            style={{ maxWidth: 360 }}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setPage(1);
+            }}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
+            New Patient
+          </Button>
+        </Space>
 
-      <Table<PatientListItem>
-        rowKey="patient_id"
-        loading={isLoading}
-        dataSource={data?.items ?? []}
-        pagination={{
-          current: page,
-          pageSize,
-          total: data?.total ?? 0,
-          onChange: setPage,
-          showSizeChanger: false,
-        }}
-        columns={[
-          { title: "UHID", dataIndex: "uhid" },
-          { title: "Name", dataIndex: "name" },
-          { title: "Gender", dataIndex: "gender" },
-          { title: "Age", render: (_, p) => age(p.dob) },
-          { title: "Phone", dataIndex: "phone" },
-          {
-            title: "Consent",
-            dataIndex: "consent_status",
-            render: (status: string) => <Tag color={CONSENT_COLOR[status] ?? "default"}>{status}</Tag>,
-          },
-          {
-            title: "",
-            width: 48,
-            render: (_, p) => (
-              <Button type="text" icon={<EditOutlined />} onClick={() => setEditingPatientId(p.patient_id)} />
-            ),
-          },
-        ]}
-      />
+          <Table<PatientListItem>
+            rowKey="patient_id"
+            loading={isLoading}
+            dataSource={data?.items ?? []}
+            pagination={{
+              current: page,
+              pageSize,
+              total: data?.total ?? 0,
+              onChange: setPage,
+              showSizeChanger: false,
+            }}
+            columns={[
+              { title: "UHID", dataIndex: "uhid" },
+              { title: "Name", dataIndex: "name" },
+              { title: "Gender", dataIndex: "gender" },
+              { title: "Age", render: (_, p) => age(p.dob) },
+              { title: "Phone", dataIndex: "phone" },
+              {
+                title: "Consent",
+                dataIndex: "consent_status",
+                render: (status: string) => <Tag color={CONSENT_COLOR[status] ?? "default"}>{status}</Tag>,
+              },
+              {
+                title: "",
+                width: 48,
+                render: (_, p) => (
+                  <Button type="text" icon={<EditOutlined />} onClick={() => setEditingPatientId(p.patient_id)} />
+                ),
+              },
+            ]}
+          />
+      </Card>
 
       <PatientFormModal open={modalOpen} onClose={() => setModalOpen(false)} />
       <PatientFormModal

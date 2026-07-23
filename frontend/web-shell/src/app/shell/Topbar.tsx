@@ -1,17 +1,29 @@
 import { Layout, Space, Dropdown, Avatar, Button, Tooltip, Typography } from "antd";
-import { BulbOutlined, MoonOutlined, UserOutlined, LogoutOutlined } from "@ant-design/icons";
+import { BulbOutlined, MoonOutlined, UserOutlined, LogoutOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import GlobalSearch from "./GlobalSearch";
 import { useThemeMode } from "../../theme/ThemeProvider";
 import { useAuth } from "../../features/auth/AuthProvider";
 
-export default function Topbar() {
+interface TopbarProps {
+  sidebarCollapsed: boolean;
+  onExpandSidebar: () => void;
+}
+
+export default function Topbar({ sidebarCollapsed, onExpandSidebar }: TopbarProps) {
   const { mode, toggle } = useThemeMode();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   return (
     <Layout.Header className="topbar">
+      {/* Only shown once the sidebar is fully hidden — it's the sidebar's
+       * own top-of-brand button otherwise. */}
+      {sidebarCollapsed && (
+        <Tooltip title="Show navigation">
+          <Button type="text" aria-label="Show navigation" icon={<MenuUnfoldOutlined />} onClick={onExpandSidebar} />
+        </Tooltip>
+      )}
       <div className="topbar-search"><GlobalSearch /></div>
       <Space size="middle" align="center">
         <Tooltip title={mode === "dark" ? "Switch to light" : "Switch to dark"}>
@@ -28,7 +40,7 @@ export default function Topbar() {
               { key: "role", disabled: true, label: <Typography.Text type="secondary">Role: {user?.role}</Typography.Text> },
               { type: "divider" },
               { key: "logout", icon: <LogoutOutlined />, label: "Sign out",
-                onClick: () => { logout(); navigate("/login", { replace: true }); } },
+                onClick: () => { logout(); navigate("/", { replace: true }); } },
             ],
           }}
         >
