@@ -14,6 +14,17 @@ Every session should start by reading the latest entries here, and end by adding
 
 ## Log
 
+### 2026-07-16 (later still, post-Phase-1) — Major architecture reversal: full plugin system confirmed
+Read both roadmap PDFs in `project-docs/` (`HMS_Complete_Roadmap.pdf`, `HMS_Technical_Roadmap.pdf`) to scope "next phase." Found a real conflict: `HMS_Technical_Roadmap.pdf` specifies a genuine **plugin architecture** (Odoo-style) — per-department Python wheels, own DB schemas, `pluggy`/entry-points runtime loader, `module_registry` table, `module.json` manifests, Vite Module Federation on the frontend, a self-hosted Gitea package registry, and an in-app "Module Store" UI. This directly contradicts the original brief's "feature flags, NOT a runtime plugin system" decision that Phase 1 (Tasks 1-7) was built around.
+
+**User's decision: build the full plugin system per the Technical Roadmap**, not the simpler feature-flag version. Note: partner's original `requirements.txt` already included `pluggy`, suggesting this may have been the intended direction from the start. Updated `docs/decisions/001-choices.md` to record this reversal (struck through the old feature-flags decision, documented the new one with reasoning).
+
+**Also confirmed today:** auth is custom JWT (python-jose + argon2-cffi) — not Keycloak (which both roadmap PDFs actually specify!) and not `fastapi-users`. This explicitly overrides the roadmaps' Keycloak mentions. Scope includes password reset + email verification. Uninstalled `fastapi-users`, `fastapi-users-db-sqlalchemy`, and their now-orphaned dependencies (`bcrypt`, `dnspython`, `email-validator`, `makefun`, `pwdlib`, `PyJWT`) from the venv — `pip check` confirmed nothing else depended on them, and the app still imports cleanly. `requirements.txt` re-frozen, clean.
+
+**Next up:** plan and build the Technical Roadmap's "Phase 1: Core Platform + Package Framework" (its own phase 1, distinct from what we did before) — core identity/RBAC/patients/audit/billing (which conveniently already matches our `backend/app/core/` folders from Task 3) plus the actual plugin/module-loader machinery. This is a substantial build — plan before coding.
+
+---
+
 ### 2026-07-16 (later still) — Task 7: Phase 1 committed and pushed
 Reviewed the full `git status` before staging — confirmed both `backend/.env` and `infra/.env` correctly appear under Git's *ignored* list (not staged). Staged 22 files (skeleton folders from Task 3, updated `config.py`/`main.py`/`requirements.txt` from Tasks 4/6, `infra/docker-compose.yml` + `.env.example` from Task 5, updated README/chat log). Also noticed and included `project-docs/MedCore_HMS_Tech_Stack.pdf`, which had been added to that folder outside of this session.
 
