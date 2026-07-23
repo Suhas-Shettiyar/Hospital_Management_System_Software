@@ -15,9 +15,15 @@ async function loadOpd() {
   registerModule(opdModule);
 }
 
+async function loadLab() {
+  const { labModule } = await import("lab_remote/module");
+  registerModule(labModule);
+}
+
 const REMOTE_LOADERS: Record<string, () => Promise<void>> = {
   example_hello: loadExampleHello,
   opd: loadOpd,
+  lab: loadLab,
 };
 
 /** For each backend-enabled module id that has a known remote, dynamically

@@ -1,23 +1,22 @@
 import { MedicineBoxOutlined } from "@ant-design/icons";
-import "./opd.css";
 import type { HmsModule } from "./moduleContract";
-import PatientSearchPage from "./PatientSearchPage";
-import ConsultationWorkspace from "./ConsultationWorkspace";
-import VisitDetailPage from "./VisitDetailPage";
+import ConsultationsPage from "./ConsultationsPage";
+import NewConsultationForm from "./NewConsultationForm";
 
 /** This is the one thing exposed via federation (see vite.config.ts's
  * `exposes: { "./module": "./src/module.tsx" }`). The host dynamically
  * imports this and passes it straight to its own registerModule(). */
 export const opdModule: HmsModule = {
   id: "opd", // must match backend's module_registry.module_id
-  title: "Outpatient",
+  title: "OPD",
   icon: <MedicineBoxOutlined />,
-  order: 10,
+  order: 20,
   routes: [
-    { path: "opd", element: <PatientSearchPage /> },
-    { path: "opd/consult/:patientId", element: <ConsultationWorkspace /> },
-    { path: "opd/visits/:visitId", element: <VisitDetailPage /> },
+    { path: "opd", element: <ConsultationsPage /> },
+    { path: "opd/new", element: <NewConsultationForm /> },
   ],
-  menu: [{ path: "/opd", label: "Outpatient" }],
-  permissions: ["patients:read"],
+  menu: [
+    { path: "/opd", label: "Consultations" },
+    { path: "/opd/new", label: "New Consultation" },
+  ],
 };

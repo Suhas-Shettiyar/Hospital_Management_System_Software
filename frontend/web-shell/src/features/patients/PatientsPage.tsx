@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Typography, Input, Button, Table, Tag, Drawer, Descriptions, Space, Card } from "antd";
-import { PlusOutlined, EditOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, MedicineBoxOutlined, ExperimentOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { listPatients, getPatient, type PatientListItem } from "./patientsApi";
 import PatientFormModal from "./PatientFormModal";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
-import { useCan } from "../auth/useCan";
+import { getModules } from "../../app/moduleRegistry";
 
 const CONSENT_COLOR: Record<string, string> = {
   granted: "success",
@@ -22,6 +22,13 @@ function age(dob: string): number {
 
 export default function PatientsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  // OPD is an optional department package - only show the action if it's
+  // actually registered (enabled + its remote is reachable), so a
+  // deployment with OPD disabled doesn't show a dead button.
+  const opdEnabled = getModules().some((m) => m.id === "opd");
+  // Same reasoning as opdEnabled - Lab is also an optional department package.
+  const labEnabled = getModules().some((m) => m.id === "lab");
   const [q, setQ] = useState("");
   const debouncedQ = useDebouncedValue(q, 300);
   const [page, setPage] = useState(1);
@@ -103,14 +110,27 @@ export default function PatientsPage() {
               },
               {
                 title: "",
-                width: 48,
+                width: 48 + (opdEnabled ? 40 : 0) + (labEnabled ? 40 : 0),
                 render: (_, p) => (
-                  <Button
-                    type="text"
-                    icon={<EditOutlined />}
-                    disabled={!canWrite}
-                    onClick={() => setEditingPatientId(p.patient_id)}
-                  />
+                  <Space size={4}>
+                    <Button type="text" icon={<EditOutlined />} onClick={() => setEditingPatientId(p.patient_id)} />
+                    {opdEnabled && (
+                      <Button
+                        type="text"
+                        icon={<MedicineBoxOutlined />}
+                        title="Start Consultation"
+                        onClick={() => navigate(`/opd/new?patient=${p.patient_id}`)}
+                      />
+                    )}
+                    {labEnabled && (
+                      <Button
+                        type="text"
+                        icon={<ExperimentOutlined />}
+                        title="Order Lab Test"
+                        onClick={() => navigate(`/lab/new?patient=${p.patient_id}`)}
+                      />
+                    )}
+                  </Space>
                 ),
               },
             ]}

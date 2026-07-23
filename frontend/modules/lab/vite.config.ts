@@ -10,7 +10,7 @@ export default defineConfig({
   plugins: [
     react(),
     federation({
-      name: "opd_remote",
+      name: "lab_remote",
       filename: "remoteEntry.js",
       exposes: {
         "./module": "./src/module.tsx",
@@ -24,6 +24,6 @@ export default defineConfig({
       },
     }),
   ],
-  server: { port: 5175, strictPort: true, cors: true },
+  server: { port: 5176, strictPort: true, cors: true },
   build: { target: "esnext", modulePreload: false },
 });
