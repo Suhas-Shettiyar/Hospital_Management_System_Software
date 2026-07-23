@@ -52,6 +52,10 @@ class User(Base):
         Enum(*UserRole.ALL, name="user_role", native_enum=False, validate_strings=True),
         nullable=False,
     )
+    # Only ever set for role=patient rows - links a portal login to the
+    # clinical record it represents. Nullable because most Users (staff)
+    # have no corresponding Patient row at all.
+    patient_id: Mapped[int | None] = mapped_column(ForeignKey("patients.patient_id"), index=True)
     status: Mapped[str] = mapped_column(
         Enum(*UserStatus.ALL, name="user_status", native_enum=False, validate_strings=True),
         nullable=False,
