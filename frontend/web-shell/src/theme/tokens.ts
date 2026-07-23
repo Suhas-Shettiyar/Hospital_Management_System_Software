@@ -1,9 +1,23 @@
 /**
  * Design tokens — the single source of truth for the visual identity.
- * Identity: Feldgrau + Reseda green + Alabaster + Ash gray, with one warm
- * Gold accent reserved for primary CTAs, the active-nav indicator, and
- * highlights. The sage family stays calm and earthy everywhere else so the
- * gold reads as intentional emphasis, not noise.
+ *
+ * Identity: your supplied 5-swatch palette, an olive-sage monochromatic
+ * ramp from dark to light — #414833 (darkest) · #737A5D · #A4AC86 ·
+ * #CCBFA3 · #EBE3D2 (lightest). All 5 appear verbatim somewhere below. No
+ * gold or any other accent hue is used anywhere — this is a strict
+ * single-hue system, calm through restraint. "White" is replaced by a soft
+ * near-white beige (computed, one shade lighter than #EBE3D2) everywhere a
+ * card/container background is needed, per instruction.
+ *
+ * A few extra shades are DERIVED from the palette (darkened, same hue
+ * family) purely to hit WCAG-legible contrast for secondary text and true
+ * dark-mode backgrounds — the 5 swatches are all pale-to-mid tones, so
+ * those two specific needs have to be computed rather than picked directly
+ * from the set.
+ *
+ * Semantic colors (danger/success/warning/info) stay conventional red/green/
+ * orange/blue — clinical alerts need to read as universal signals regardless
+ * of brand hue.
  *
  * These feed Ant Design's ConfigProvider. Change the look here, nowhere else.
  */
@@ -13,35 +27,29 @@ import { theme as antdTheme } from "antd";
 // Brand constants also exposed as CSS variables (see ThemeProvider) so our
 // own (non-antd) components can use them.
 export const brand = {
-  // Feldgrau — mid tone usable for buttons/icons, hover darkens toward
-  // the deep anchor shade; dark-mode primary lightens toward sage
-  // so it stays legible on a dark background.
-  primary: "#57695B",
-  primaryHover: "#425040",
-  primaryDark: "#9B9D85",
-  primaryDarkHover: "#BABFAC",
-  // Alabaster — soft pastel tint, used for selected/highlighted states.
-  primarySoft: "#EDF1EA",
-  primarySoftDark: "#2E3830",
-  // Deep, fixed (not light/dark-mode dependent) Feldgrau used ONLY for
-  // large solid-fill bands that need to hold white text (sidebar, landing
-  // hero/closing, login modal chrome) — brand.primary itself stays a
-  // lighter usable mid-tone for buttons and icons, so it needs a deeper
-  // sibling for contrast here.
-  surfaceFill: "#425040",
-  // Reseda green — sparing secondary accent for supporting highlights.
-  accent: "#798370",
-  accentDark: "#9BAA8E",
-  accentSoft: "#E5E9E0",
-  accentSoftDark: "#333B2E",
-  // Gold — the one warm, high-contrast hue against the sage palette;
-  // reserved for primary CTAs, the active-nav indicator, and anything
-  // that needs to visually pop rather than blend into the earthy greens.
-  gold: "#C99A3A",
-  goldHover: "#B3852A",
-  goldDark: "#E0B563",
-  goldSoft: "#FBF0DA",
-  goldSoftDark: "#3D2F14",
+  // #414833 — the darkest swatch, doing double duty as both the button/
+  // accent color AND the fixed deep band color (sidebar, hero, login modal)
+  // — one anchor tone, not two. Contrasts very safely with white text
+  // (~9.5:1). Dark mode instead uses #A4AC86, a lighter swatch that needs
+  // dark (not white) button labels, since it now has to sit against a near-
+  // black page rather than hold text on itself.
+  primary: "#414833",
+  primaryHover: "#343A26",
+  primaryDark: "#A4AC86",
+  primaryDarkHover: "#B4BC96",
+  primarySoft: "#CCBFA3", // pale wash, selected/highlighted states
+  primarySoftDark: "#333823",
+  surfaceFill: "#414833",
+  // A lighter stop of the SAME ramp (not a second hue) for the hero/closing
+  // gradient, so that band has gentle depth without introducing any accent
+  // beyond the given palette.
+  surfaceFillAccent: "#737A5D",
+  // A lighter tint of the same ramp, used only where a second visual weight
+  // is needed alongside the main accent (e.g. two stat tiles side by side).
+  accent: "#A4AC86",
+  accentDark: "#B4BC96",
+  accentSoft: "#CCBFA3",
+  accentSoftDark: "#333823",
   danger: "#D92D20",
   dangerDark: "#F1645A",
   success: "#1F9254",
@@ -56,20 +64,32 @@ export const brand = {
   infoDark: "#5B93F5",
 } as const;
 
-// Ash gray / Alabaster — a soft sage-tinted neutral scale, used for
-// text/borders/backgrounds so the whole app's "gray" reads as part of the
-// same sage family instead of a cool office-gray or stark white.
+// The neutral ramp — your 5 given swatches (#EBE3D2, #CCBFA3, #A4AC86,
+// #737A5D, #414833) placed at their natural lightness position, plus a
+// handful of computed steps: a near-white beige (replaces "white" for
+// card/container backgrounds) and a couple of darker olive shades for
+// legible secondary text and a true dark-mode canvas, since nothing in the
+// given set is dark enough for either. Index 0 = lightest, 8 = darkest
+// (light array), mirrored for dark.
+//
+// The dark array's first 3 steps are deliberately spaced further apart than
+// a simple even ramp would give (page → card → elevated): with everything
+// at one muted hue, layers that are too close in value read as one flat
+// mass instead of a layered UI. Page background sits near true black so the
+// warmer, lighter sidebar (brand.surfaceFill, #414833 — set separately, not
+// from this array) reads as a clearly distinct anchor band rather than
+// blending into the content behind it.
 export const gray = {
-  light: ["#F5F6F3", "#EDEFEA", "#DDE1D8", "#BABFAC", "#9B9D85", "#798370", "#57695B", "#3A4438", "#232B22"],
-  dark: ["#1D231C", "#2A322A", "#3A4438", "#57695B", "#798370", "#9B9D85", "#BABFAC", "#DDE1D8", "#F5F6F3"],
+  light: ["#faf8f2", "#f5f0e6", "#ebe3d2", "#ccbfa3", "#a4ac86", "#737a5d", "#4b4f3c", "#3a3f2c", "#414833"],
+  dark: ["#171a10", "#262b1b", "#343b26", "#4b5238", "#737a5d", "#a4ac86", "#ccbfa3", "#ebe3d2", "#f5f0e6"],
 } as const;
 
 export const shadow = {
   light: {
-    xs: "0 1px 2px rgba(16,24,32,0.04)",
-    sm: "0 2px 6px rgba(16,24,32,0.06)",
-    md: "0 8px 24px rgba(16,24,32,0.08)",
-    lg: "0 16px 40px rgba(16,24,32,0.12)",
+    xs: "0 1px 2px rgba(65,72,51,0.06)",
+    sm: "0 2px 6px rgba(65,72,51,0.08)",
+    md: "0 8px 24px rgba(65,72,51,0.10)",
+    lg: "0 16px 40px rgba(65,72,51,0.16)",
   },
   dark: {
     xs: "0 1px 2px rgba(0,0,0,0.4)",
@@ -96,13 +116,16 @@ const fontStack =
   '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 const shared: ThemeConfig["token"] = {
-  // Gold is the primary action color app-wide (buttons, links, focus rings)
-  // so CTAs pop against the sage surfaces instead of blending into them.
-  colorPrimary: brand.gold,
+  colorPrimary: brand.primary,
   colorInfo: brand.info,
   colorSuccess: brand.success,
   colorWarning: brand.warning,
   colorError: brand.danger,
+  // AntD's default modal/drawer mask (~45% black) is too light to make the
+  // dialog feel like the sole focus — GitHub/Instagram-style modals dim
+  // much harder than that. Applies to every Modal/Drawer app-wide, not just
+  // login, so the whole app is consistent.
+  colorBgMask: "rgba(0,0,0,0.7)",
   borderRadius: radius.control,
   borderRadiusLG: radius.card,
   fontFamily: fontStack,
@@ -115,23 +138,27 @@ export const lightTheme: ThemeConfig = {
   algorithm: [antdTheme.defaultAlgorithm, antdTheme.compactAlgorithm],
   token: {
     ...shared,
-    colorBgLayout: gray.light[0],
-    colorBgContainer: "#FFFFFF",
-    colorBgElevated: "#FFFFFF",
+    // Explicit (not left to AntD default): brand.primary contrasts safely
+    // with white text (~9.5:1), so white solid-button labels are legible.
+    colorTextLightSolid: "#FFFFFF",
+    colorBgLayout: gray.light[2],
+    // "Instead of white use beige" — a near-white beige, not literal white.
+    colorBgContainer: gray.light[1],
+    colorBgElevated: gray.light[1],
     colorText: gray.light[8],
-    colorTextSecondary: gray.light[5],
-    colorBorder: gray.light[3],
-    colorBorderSecondary: gray.light[2],
+    colorTextSecondary: gray.light[6],
+    colorBorder: gray.light[4],
+    colorBorderSecondary: gray.light[3],
   },
   components: {
-    Layout: { headerBg: "#FFFFFF", siderBg: "#FFFFFF", bodyBg: gray.light[0] },
+    Layout: { headerBg: gray.light[1], siderBg: gray.light[1], bodyBg: gray.light[2] },
     Menu: {
-      itemSelectedBg: brand.goldSoft, itemSelectedColor: brand.goldHover, itemHoverBg: gray.light[1],
+      itemSelectedBg: brand.primarySoft, itemSelectedColor: brand.primary, itemHoverBg: gray.light[0],
       darkItemBg: "transparent", darkItemColor: "rgba(255,255,255,0.72)",
       darkItemHoverColor: "#FFFFFF", darkItemHoverBg: "rgba(255,255,255,0.08)",
-      darkItemSelectedBg: "rgba(201,154,58,0.24)", darkItemSelectedColor: "#FFFFFF",
+      darkItemSelectedBg: "rgba(65,72,51,0.28)", darkItemSelectedColor: "#FFFFFF",
     },
-    Table: { headerBg: gray.light[1], rowHoverBg: gray.light[0], cellPaddingBlockSM: 6 },
+    Table: { headerBg: gray.light[0], rowHoverBg: gray.light[1], cellPaddingBlockSM: 6 },
     Button: { primaryShadow: shadow.light.xs, borderRadius: radius.control },
     Input: { borderRadius: radius.control },
     Select: { borderRadius: radius.control },
@@ -145,7 +172,12 @@ export const darkTheme: ThemeConfig = {
   algorithm: [antdTheme.darkAlgorithm, antdTheme.compactAlgorithm],
   token: {
     ...shared,
-    colorPrimary: brand.goldDark,
+    colorPrimary: brand.primaryDark,
+    // The lighter dark-mode swatch (#A4AC86) needs dark (not white) label
+    // text — AntD's algorithms don't infer this from colorPrimary's
+    // lightness on their own, so it's set explicitly here (contrast ~7.4:1
+    // against gray.dark[0]).
+    colorTextLightSolid: gray.dark[0],
     colorInfo: brand.infoDark,
     colorSuccess: brand.successDark,
     colorWarning: brand.warningDark,
@@ -161,10 +193,10 @@ export const darkTheme: ThemeConfig = {
   components: {
     Layout: { headerBg: gray.dark[1], siderBg: gray.dark[0], bodyBg: gray.dark[0] },
     Menu: {
-      itemSelectedBg: brand.goldSoftDark, itemSelectedColor: brand.goldDark, itemHoverBg: gray.dark[2],
+      itemSelectedBg: brand.primarySoftDark, itemSelectedColor: brand.primaryDark, itemHoverBg: gray.dark[2],
       darkItemBg: "transparent", darkItemColor: "rgba(255,255,255,0.72)",
       darkItemHoverColor: "#FFFFFF", darkItemHoverBg: "rgba(255,255,255,0.08)",
-      darkItemSelectedBg: "rgba(224,181,99,0.24)", darkItemSelectedColor: "#FFFFFF",
+      darkItemSelectedBg: "rgba(164,172,134,0.28)", darkItemSelectedColor: "#FFFFFF",
     },
     Table: { headerBg: gray.dark[2], rowHoverBg: gray.dark[2] },
     Button: { primaryShadow: shadow.dark.xs, borderRadius: radius.control },

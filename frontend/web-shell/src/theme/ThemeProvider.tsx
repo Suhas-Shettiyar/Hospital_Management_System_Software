@@ -34,25 +34,39 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty("--brand-accent", isDark ? brand.accentDark : brand.accent);
     root.style.setProperty("--brand-accent-dark", brand.accentDark);
     root.style.setProperty("--brand-accent-soft", isDark ? brand.accentSoftDark : brand.accentSoft);
-    // Gold — the one warm hue against the sage palette, reserved for CTAs,
-    // the active-nav rail, and anything that needs to visually pop.
-    root.style.setProperty("--brand-gold", isDark ? brand.goldDark : brand.gold);
-    root.style.setProperty("--brand-gold-hover", brand.goldHover);
-    root.style.setProperty("--brand-gold-soft", isDark ? brand.goldSoftDark : brand.goldSoft);
+    // The active-nav rail / focus-ring accent — no gold or any second hue,
+    // just the one palette's primary tone (named "rail" for what it's
+    // actually used for, not a color name).
+    root.style.setProperty("--brand-rail", isDark ? brand.primaryDark : brand.primary);
+    root.style.setProperty("--brand-rail-hover", isDark ? brand.primaryDarkHover : brand.primaryHover);
+    root.style.setProperty("--brand-rail-soft", isDark ? brand.primarySoftDark : brand.primarySoft);
+    // Logo badge glow: a soft blend of the palette's two weights (the given
+    // dark swatch's paired light swatch), always the same regardless of app
+    // mode — a decorative mark, not text-bearing, so it can stay a touch
+    // richer than the flat shade used for buttons, without introducing any
+    // color outside the given palette.
     root.style.setProperty(
       "--brand-glow",
-      isDark
-        ? `radial-gradient(circle at 30% 30%, ${brand.goldDark}, ${brand.gold})`
-        : `radial-gradient(circle at 30% 30%, ${brand.gold}, ${brand.goldHover})`
+      `radial-gradient(circle at 30% 30%, ${brand.primaryDark}, ${brand.accent})`
     );
     root.style.setProperty("--success-bg", isDark ? brand.successSoftDark : brand.successSoft);
     root.style.setProperty("--warning-bg", isDark ? brand.warningSoftDark : brand.warningSoft);
     root.style.setProperty("--info-color", isDark ? brand.infoDark : brand.info);
-    // Fixed deep Feldgrau for large solid-fill bands that hold white text
-    // (sidebar, landing hero/closing, login modal) — deliberately NOT
-    // mode-dependent, since brand.primary itself stays a lighter usable
-    // mid-tone for buttons and icons.
+    // Fixed deep anchor tone (the darkest given swatch) for large solid-fill
+    // bands that hold white text (sidebar, landing hero/closing, login
+    // modal) — deliberately NOT mode-dependent. surfaceFillAccent is a
+    // lighter stop of the SAME palette (not a second color), giving the
+    // hero/closing bands gentle gradient depth.
     root.style.setProperty("--brand-surface-fill", brand.surfaceFill);
+    root.style.setProperty("--brand-surface-fill-accent", brand.surfaceFillAccent);
+    // Plain (non-antd) elements that sit on a fixed-beige surface regardless
+    // of app mode (the public landing nav) still need explicit, correct text
+    // color — leaving it to inherit risks the browser's dark color-scheme
+    // UA default (near-white) landing on a light background.
+    root.style.setProperty("--text-on-beige", gray.light[8]);
+    // The landing nav stays a fixed light surface regardless of app mode
+    // (public marketing page) — beige, not literal white, per instruction.
+    root.style.setProperty("--surface-beige", gray.light[1]);
 
     const s = isDark ? shadow.dark : shadow.light;
     root.style.setProperty("--shadow-xs", s.xs);
