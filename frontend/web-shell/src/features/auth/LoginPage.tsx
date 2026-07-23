@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Form, Input, Button, Typography, App as AntApp } from "antd";
-import { UserOutlined, LockOutlined } from "@ant-design/icons";
+import { MailOutlined, LockOutlined } from "@ant-design/icons";
 import { useAuth } from "./AuthProvider";
 import { brand } from "../../theme/tokens";
 
@@ -14,13 +14,13 @@ export default function LoginPage() {
 
   const from = (location.state as { from?: string })?.from ?? "/dashboard";
 
-  const onFinish = async (values: { username: string; password: string }) => {
+  const onFinish = async (values: { email: string; password: string }) => {
     setLoading(true);
     try {
-      await login(values.username, values.password);
+      await login(values.email, values.password);
       navigate(from, { replace: true });
-    } catch {
-      message.error("Could not sign in. Check your details and try again.");
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : "Could not sign in. Check your details and try again.");
     } finally {
       setLoading(false);
     }
@@ -39,12 +39,15 @@ export default function LoginPage() {
 
         <Form layout="vertical" onFinish={onFinish} requiredMark={false} autoComplete="off">
           <Form.Item
-            name="username"
-            label="Username"
-            rules={[{ required: true, message: "Enter your username" }]}
+            name="email"
+            label="Email"
+            rules={[
+              { required: true, message: "Enter your email" },
+              { type: "email", message: "Enter a valid email address" },
+            ]}
           >
             {/* autoFocus = keyboard-first: cursor lands here on load */}
-            <Input prefix={<UserOutlined />} placeholder="e.g. frontdesk1" autoFocus size="large" />
+            <Input prefix={<MailOutlined />} placeholder="e.g. frontdesk1@clinic.example" autoFocus size="large" />
           </Form.Item>
 
           <Form.Item
@@ -59,10 +62,6 @@ export default function LoginPage() {
             Sign in
           </Button>
         </Form>
-
-        <Typography.Text type="secondary" className="login-hint">
-          Demo: any username and password works until backend auth is connected.
-        </Typography.Text>
       </div>
       <div className="login-side" aria-hidden />
     </div>

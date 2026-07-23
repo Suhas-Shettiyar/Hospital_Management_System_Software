@@ -34,7 +34,7 @@ export default function Topbar() {
         >
           <Space className="topbar-user" style={{ cursor: "pointer" }}>
             <Avatar size="small" icon={<UserOutlined />} style={{ background: "var(--brand-primary)" }} />
-            <span className="topbar-username">{user?.displayName ?? "User"}</span>
+            <span className="topbar-username">{user?.name ?? "User"}</span>
           </Space>
         </Dropdown>
       </Space>
