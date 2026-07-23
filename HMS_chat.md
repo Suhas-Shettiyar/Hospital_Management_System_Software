@@ -14,6 +14,39 @@ Every session should start by reading the latest entries here, and end by adding
 
 ## Log
 
+### 2026-07-16 (even later) — Stage 2 complete: real JWT auth endpoints
+Planned via plan mode again (previous plan file overwritten - this was a genuinely new task). Confirmed with user: real email via **Brevo** (free transactional API, not Gmail, not deferred), single access token ~10h expiry (no refresh tokens), standard Bearer-JWT-in-header auth.
+
+**Built, all under `app/core/auth/`:**
+- `security.py` - argon2-cffi password hashing, python-jose JWT encode/decode, sha256 token hashing for reset/verify links (raw token only ever emailed, never stored - only its hash is).
+- `schemas.py` - Pydantic request/response models (had to reinstall `email-validator`, which I'd removed earlier as a `fastapi-users` orphan - it's genuinely needed now for `EmailStr`).
+- `email.py` - Brevo HTTP API wrapper (`https://api.brevo.com/v3/smtp/email` via httpx). Gracefully skips + logs if `BREVO_API_KEY` is unset, matching the app's existing lazy-connection philosophy - **user still needs to sign up at brevo.com and paste a real API key into `backend/.env` for actual email delivery to work; everything else works today regardless.**
+- `dependencies.py` - `get_current_user` (Bearer JWT → DB user) and `require_roles(*roles)` (built for future modules to reuse, not consumed by anything yet).
+- `router.py` - 7 endpoints: register, login, password-reset-request/confirm, verify-email, resend-verification, `GET /me`.
+- New `app/core/audit/service.py` - `record_audit()` helper, used in the same transaction/commit as each write it documents.
+- Config additions (`jwt_secret_key` + algorithm + expiry, brevo_* fields, `frontend_base_url`) in `config.py`/`.env.example`/`.env` - generated a real random JWT secret for local dev via Python's `secrets` module.
+- Mounted the new router in `main.py` at `/api/auth`.
+
+**Bootstrapping decision:** `/register` is open to any role for now, but self-closes for `role=admin` once one admin exists (a simple count-query guard) - lets the very first admin get created with zero extra setup, without leaving an unbounded door open. Non-admin staff roles remain openly self-registerable until a real admin-only "create staff" endpoint exists later. Documented clearly in `backend/app/auth_notes.md`.
+
+**Bug found and fixed during testing:** DB timestamp columns are `TIMESTAMP WITHOUT TIME ZONE` (naive), but `router.py` initially used timezone-aware `datetime.now(timezone.utc)` for token expiry/consumption comparisons - crashed with `TypeError: can't compare offset-naive and offset-aware datetimes` on first real test. Fixed by switching all of `router.py` to naive `datetime.utcnow()` (UTC by convention), matching the DB column type.
+
+**Verified live, full checklist from the plan, all passing:**
+1. Register (as admin) → `201`, row in `users` (`is_verified=false`), `auth_tokens` row created, Brevo-skip logged, `audit_log` row written.
+2. Verify-email (using a controlled test token, since the real one only ever exists in an unsent email) → `200`, `is_verified` flips true.
+3. Login: wrong password and nonexistent email both return an identical `401` (no enumeration); correct login returns a real JWT (`expires_in: 36000` = 10h).
+4. `GET /me`: valid token → `200` with user info; missing/garbage token → `401` both times.
+5. Password-reset-request: existing vs. nonexistent email return the byte-identical message; only the real account actually gets a reset token.
+6. Password-reset-confirm: old password stops working, new password logs in successfully.
+7. Second `role=admin` registration → correctly rejected `403`; a `role=doctor` registration right after → still allowed `201`.
+8. Bonus finding: tried to delete the test users afterward for cleanup - **blocked by the audit_log foreign key** (can't delete a user with audit history, and audit_log itself can't be edited) - confirms the Stage 1 append-only design is working exactly as intended, even against accidental cleanup. Left the harmless test data in the local dev DB rather than fight the safeguard.
+
+**Not committed yet** — need to review `git status` and confirm before staging/pushing.
+
+**Next up (per the plan, Stage 3):** the real `pluggy`-based loader that reads `module_registry` and dynamically mounts/unmounts department packages (today `main.py` still statically includes `example_hello`'s router regardless of its `enabled` flag). Then Stage 4: frontend Vite Module Federation. Frontend's fake `AuthProvider.tsx` login stub also still needs wiring to these real endpoints eventually.
+
+---
+
 ### 2026-07-16 (much later) — Stage 1 of "Core Platform + Package Framework" complete: DB schema + Alembic
 Entered plan mode to scope this properly since it's a multi-week roadmap phase; agreed to split it into stages and build only Stage 1 now (schema + Alembic). Plan saved at `C:\Users\Lenovo\.claude\plans\sprightly-wondering-fiddle.md`.
 
