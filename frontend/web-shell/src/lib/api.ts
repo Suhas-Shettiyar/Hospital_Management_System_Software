@@ -6,7 +6,7 @@ const API_BASE = import.meta.env.VITE_API_BASE ?? "/api";
 
 export interface HealthResponse { status: string; service: string; version: string; }
 
-async function get<T>(path: string): Promise<T> {
+export async function get<T>(path: string): Promise<T> {
   const token = getToken();
   const res = await fetch(`${API_BASE}${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,

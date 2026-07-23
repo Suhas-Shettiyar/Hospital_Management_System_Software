@@ -14,6 +14,25 @@ Every session should start by reading the latest entries here, and end by adding
 
 ## Log
 
+### 2026-07-18 (later) — Patient registration + search (core feature, prerequisite for OPD)
+Planned via plan mode. Started the "OPD" work by first building patients, since consultations need a real patient to attach to and the `patients` table (Stage 1) had zero endpoints/UI. This is a **core** feature (always-on, alongside auth/audit/billing) - not a toggleable department package, so it doesn't go through the Stage 3 plugin loader or Stage 4 Module Federation.
+
+**Key decisions:** UHID format `MED-{year}-{patient_id:06d}` (e.g. `MED-2026-000001`), generated from Postgres's own auto-increment sequence via a flush-then-set two-step insert (same pattern as auth's `user_id`) - race-condition-safe without a new counter table. Consent captured as a simple yes/no checkbox at registration (maps to `granted`/`pending`); the full lifecycle (`denied`/`withdrawn`) is only reachable via editing an existing record. No role restrictions yet (any logged-in staff member can register/search/edit).
+
+**Built:**
+- Backend (`backend/app/core/patients/`): `schemas.py`, `service.py` (UHID generation), `router.py` (`POST/GET /api/patients`, `GET/PATCH /api/patients/{id}`, single `q` param ORs across name/phone/uhid). All require login, both mutating endpoints call the existing `record_audit()` helper. Mounted in `main.py` as always-on core.
+- Frontend (`frontend/web-shell/src/features/patients/`): `patientsApi.ts`, `PatientsPage.tsx` (searchable table + pagination + a detail drawer triggered by `?patient=<id>`), `PatientFormModal.tsx` (dual-purpose: create with the consent checkbox, or edit with the full consent-status dropdown), `module.tsx` registered in `registerCore.ts`.
+- **`GlobalSearch.tsx` wired to real search** - it was already built waiting for this (its own comment said so). New `lib/useDebouncedValue.ts` hook (no debounce library was installed). Selecting a result now actually navigates to a patient's detail drawer.
+- `lib/api.ts`'s `get()` helper exported so `patientsApi.ts` could reuse the already-authenticated fetch wrapper.
+
+**A real debugging detour worth remembering:** after building everything, `/api/patients` returned `404` even though `python -c "from app.core.patients.router import router"` proved the route existed correctly in the file. Root cause: an old backend process from an earlier stage in this same session had never actually been killed (`Stop-Process` on the reloader's parent PID didn't kill its child worker), so curl was hitting genuinely stale code the whole time on the same port. Fixed by explicitly killing every known stray python PID and restarting clean. **Lesson for future sessions: if a route that definitely exists in the code returns 404, check for a stale server process holding the port before assuming a code bug.**
+
+**Verified live in browser:** registered a new patient through the real form → correct UHID (`MED-2026-000002`), age computed correctly from DOB, consent checkbox correctly mapped to `granted`, `audit_log` got a `patient.register` row. Searched by name/phone/UHID via curl - all three find the same record through the one `q` param. Typed in the header's `GlobalSearch` → live dropdown results → selecting one navigated to `/patients?patient=2` and opened the detail drawer with all correct data. Edited an existing patient's phone number via the table's edit button → updated correctly, `audit_log` got a `patient.update` row, confirmed `uhid` has no edit field at all (can't be changed). Confirmed `/api/patients` correctly returns `401` without a token.
+
+**Out of scope, not built:** the OPD consultation feature itself (next), real ABDM/ABHA integration (only manual entry + uniqueness check), a full patient-detail page with visit history, role-based restrictions, duplicate-patient detection.
+
+---
+
 ### 2026-07-18 — Real login wired into the frontend
 Planned via plan mode. Key decisions: token stored in `localStorage` (not memory-only) since the backend's ~10h access token is explicitly designed to survive a page refresh/tab close for a full shift; session restored on page load via `GET /api/auth/me` (never trust a locally-decoded token), with an `isLoading` gate on `ProtectedRoute` so a valid refreshed session doesn't flash to `/login` and bounce back; the shared `lib/api.ts` fetch helper now attaches `Authorization: Bearer <token>` automatically whenever one is stored, so future protected endpoints work without redoing this wiring.
 
