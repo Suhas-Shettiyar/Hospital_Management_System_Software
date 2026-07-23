@@ -1,9 +1,10 @@
 """Request/response models for the auth endpoints."""
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, computed_field
 
 from app.core.auth.models import UserRole
+from app.core.auth.permissions import permissions_for
 
 
 class RegisterRequest(BaseModel):
@@ -29,6 +30,12 @@ class UserOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @computed_field
+    @property
+    def permissions(self) -> list[str]:
+        return sorted(permissions_for(self.role))
+
 
 
 class TokenResponse(BaseModel):
@@ -57,3 +64,15 @@ class VerifyEmailRequest(BaseModel):
 
 class ResendVerificationRequest(BaseModel):
     email: EmailStr
+
+
+class StaffOut(BaseModel):
+    """Lightweight shape for staff-lookup lists (e.g. the queue board's
+    per-doctor filter) - no email/status/permissions, unlike UserOut."""
+
+    user_id: int
+    name: str
+    role: str
+
+    class Config:
+        from_attributes = True

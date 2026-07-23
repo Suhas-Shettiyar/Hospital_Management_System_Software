@@ -6,11 +6,11 @@ convention, never local time.
 """
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.audit.service import record_audit
-from app.core.auth.dependencies import get_current_user
+from app.core.auth.dependencies import get_current_user, require
 from app.core.auth.email import send_password_reset_email, send_verification_email
 from app.core.auth.models import AuthToken, AuthTokenPurpose, User, UserRole, UserStatus
 from app.core.auth.schemas import (
@@ -20,6 +20,7 @@ from app.core.auth.schemas import (
     PasswordResetRequest,
     RegisterRequest,
     ResendVerificationRequest,
+    StaffOut,
     TokenResponse,
     UserOut,
     VerifyEmailRequest,
@@ -227,3 +228,18 @@ def resend_verification(payload: ResendVerificationRequest, db: Session = Depend
 @router.get("/me", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.get("/staff", response_model=list[StaffOut])
+def list_staff(
+    role: str | None = Query(default=None, pattern="^(" + "|".join(UserRole.ALL) + ")$"),
+    db: Session = Depends(get_db),
+    _user: User = Depends(require("queue:read")),
+):
+    """Staff lookup for cross-module pickers (e.g. the queue board's
+    per-doctor filter). Only active accounts - an inactive/suspended
+    doctor shouldn't be selectable for a new token."""
+    query = db.query(User).filter(User.status == UserStatus.ACTIVE)
+    if role is not None:
+        query = query.filter(User.role == role)
+    return query.order_by(User.name).all()

@@ -15,13 +15,19 @@ through Brevo's free transactional API (`app/core/auth/email.py`); if
 `BREVO_API_KEY` isn't set in `.env`, sending is skipped with a log line
 instead of failing.
 
+RBAC is permission-based (see `app/core/auth/permissions.py`): each role
+(admin/frontdesk/doctor/nurse/lab/pharmacist/cashier, plus `patient` for a
+future portal) maps to a set of permission strings, enforced per-endpoint via
+`Depends(require("some:permission"))` in `dependencies.py`. `/me` returns the
+resolved `permissions` list so the frontend doesn't duplicate the map.
+
 **Known, deliberate gaps (not yet built):**
 1. `/register` accepts any role, including `admin` - but only until the
    first admin account exists, after which further `role=admin` signups are
    rejected (see the guard in `router.py`). Non-admin staff roles
-   (doctor/nurse/lab/pharmacy/billing) remain openly self-registerable -
-   a real admin-only "create staff account" endpoint is still needed before
-   real deployment.
+   (doctor/nurse/lab/pharmacist/cashier/frontdesk) remain openly
+   self-registerable - a real admin-only "create staff account" endpoint is
+   still needed before real deployment.
 2. No refresh tokens, logout, or token revocation - a token stays valid
    until its own expiry even after a password reset.
 3. No rate limiting / brute-force lockout on `/login` or

@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { Layout, Spin } from "antd";
+import { Layout, Spin, Result } from "antd";
 import { Outlet, Navigate, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import { useAuth } from "../../features/auth/AuthProvider";
+import { useCan } from "../../features/auth/useCan";
 
 /** Every module renders inside this frame. Sidebar visibility is owned here
  * (not inside Sidebar itself) because collapsing hides the sidebar
@@ -49,3 +50,24 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   if (!user) return <Navigate to="/" replace state={{ from: location.pathname }} />;
   return <>{children}</>;
 }
+
+/** Route-level permission gate. This is cosmetic/UX only - the real
+ * enforcement is the backend's require(permission) dependency; a user who
+ * bypasses this still gets a 403 from the API on any actual write. Compose
+ * inside ProtectedRoute, not in place of it. */
+export function RequirePermission({
+  permission,
+  children,
+}: {
+  permission: string;
+  children: ReactNode;
+}) {
+  const { isLoading } = useAuth();
+  const allowed = useCan(permission);
+  if (isLoading) return <FullPageSpinner />;
+  if (!allowed) {
+    return <Result status="403" title="403" subTitle="You don't have access to this page." />;
+  }
+  return <>{children}</>;
+}
+

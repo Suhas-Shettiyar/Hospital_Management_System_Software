@@ -1,10 +1,14 @@
-"""Patient registration, search, and update endpoints (core - always on)."""
+"""Patient registration, search, and update endpoints (core - always on).
+
+RBAC: patients:write (register/update) is restricted to front-desk roles
+(admin, frontdesk); patients:read (search/view) is available to all staff.
+"""
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core.audit.service import record_audit
-from app.core.auth.dependencies import get_current_user
+from app.core.auth.dependencies import require
 from app.core.auth.models import User
 from app.core.patients.models import Patient
 from app.core.patients.schemas import (
@@ -29,7 +33,7 @@ def create_patient(
     payload: PatientCreate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("patients:write")),
 ):
     if payload.abha_number:
         exists = db.query(Patient).filter(Patient.abha_number == payload.abha_number).first()
@@ -56,7 +60,7 @@ def search_patients(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("patients:read")),
 ):
     query = db.query(Patient)
     if q:
@@ -72,7 +76,7 @@ def search_patients(
 def get_patient(
     patient_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("patients:read")),
 ):
     patient = db.get(Patient, patient_id)
     if patient is None:
@@ -86,7 +90,7 @@ def update_patient(
     payload: PatientUpdate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("patients:write")),
 ):
     patient = db.get(Patient, patient_id)
     if patient is None:
@@ -106,3 +110,4 @@ def update_patient(
     db.commit()
     db.refresh(patient)
     return patient
+

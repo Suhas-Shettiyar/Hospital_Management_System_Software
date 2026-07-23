@@ -4,6 +4,7 @@ import { MenuFoldOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { MenuProps } from "antd";
 import { getModules } from "../moduleRegistry";
+import { useAuth } from "../../features/auth/AuthProvider";
 
 interface SidebarProps {
   /** AppShell unmounts the sidebar entirely on collapse — this only fires
@@ -12,28 +13,37 @@ interface SidebarProps {
 }
 
 /** The sidebar is generated from registered modules — add a module, get a nav
- *  entry for free. Nothing here is hard-coded per department. */
+ *  entry for free. Nothing here is hard-coded per department.
+ *
+ *  Permission filtering here is cosmetic only (hides nav a role can't use);
+ *  the backend's require(permission) dependency is the real gate. A module
+ *  with no `permissions` declared stays visible to everyone, so existing
+ *  modules that haven't opted in yet don't disappear. */
 export default function Sidebar({ onCollapse }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { permissionSet } = useAuth();
 
   const items: MenuProps["items"] = useMemo(
     () =>
-      getModules().map((m) => {
-        const entries = m.menu ?? [];
-        if (entries.length <= 1) {
-          const only = entries[0];
-          return { key: only?.path ?? m.id, icon: m.icon, label: m.title,
-                   onClick: () => only && navigate(only.path) };
-        }
-        return {
-          key: m.id, icon: m.icon, label: m.title,
-          children: entries.map((e) => ({ key: e.path, label: e.label, icon: e.icon,
-                    onClick: () => navigate(e.path) })),
-        };
-      }),
-    [navigate]
+      getModules()
+        .filter((m) => !m.permissions || m.permissions.some((p) => permissionSet.has(p)))
+        .map((m) => {
+          const entries = m.menu ?? [];
+          if (entries.length <= 1) {
+            const only = entries[0];
+            return { key: only?.path ?? m.id, icon: m.icon, label: m.title,
+                     onClick: () => only && navigate(only.path) };
+          }
+          return {
+            key: m.id, icon: m.icon, label: m.title,
+            children: entries.map((e) => ({ key: e.path, label: e.label, icon: e.icon,
+                      onClick: () => navigate(e.path) })),
+          };
+        }),
+    [navigate, permissionSet]
   );
+
 
   return (
     <Layout.Sider theme="dark" width={228} className="sidebar">
