@@ -45,6 +45,12 @@ export default defineConfig({
           entry: "http://localhost:5178/remoteEntry.js",
           entryGlobalName: "appointments_remote",
         },
+        ipd_remote: {
+          type: "module",
+          name: "ipd_remote",
+          entry: "http://localhost:5179/remoteEntry.js",
+          entryGlobalName: "ipd_remote",
+        },
       },
       shared: {
         react: { singleton: true, requiredVersion: "^19.1.0" },

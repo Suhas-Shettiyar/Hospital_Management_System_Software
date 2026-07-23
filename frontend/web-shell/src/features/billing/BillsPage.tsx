@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import { listBills, type BillListItem, type BillStatus } from "./billingApi";
 import { getPatient } from "../patients/patientsApi";
 import BillDetailDrawer from "./BillDetailDrawer";
+import { useCan } from "../auth/useCan";
 
 type ViewMode = "draft" | "awaiting" | "paid" | "all";
 
@@ -33,6 +34,7 @@ export default function BillsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<ViewMode>("draft");
+  const canWrite = useCan("billing:write");
 
   const statusFilter: BillStatus | undefined =
     viewMode === "draft" ? "draft" : viewMode === "awaiting" ? "finalized" : viewMode === "paid" ? "paid" : undefined;
@@ -73,7 +75,7 @@ export default function BillsPage() {
               { label: "All", value: "all" },
             ]}
           />
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate("/billing/new")}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate("/billing/new")} disabled={!canWrite}>
             New Bill
           </Button>
         </div>

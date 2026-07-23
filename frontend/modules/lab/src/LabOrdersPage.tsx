@@ -27,6 +27,7 @@ import {
   type LabOrderStatus,
   type LabResultIn,
 } from "./labApi";
+import { useCan } from "./useCan";
 
 type StatusFilter = LabOrderStatus | "all";
 
@@ -42,6 +43,7 @@ export default function LabOrdersPage() {
   const { message } = AntApp.useApp();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ordered");
   const [resultForm] = Form.useForm<LabResultIn>();
+  const canWrite = useCan("lab:write");
 
   const patientFilter = searchParams.get("patient");
   const patientIdNum = patientFilter ? Number(patientFilter) : undefined;
@@ -128,6 +130,7 @@ export default function LabOrdersPage() {
           <Button
             type="primary"
             icon={<PlusOutlined />}
+            disabled={!canWrite}
             onClick={() => navigate(patientIdNum ? `/lab/new?patient=${patientIdNum}` : "/lab/new")}
           >
             New Lab Order
@@ -160,6 +163,7 @@ export default function LabOrdersPage() {
         onOk={() => resultForm.submit()}
         confirmLoading={submitResult.isPending}
         okText="Save Result"
+        okButtonProps={{ disabled: !canWrite }}
       >
         <Form form={resultForm} layout="vertical" onFinish={(values) => submitResult.mutate(values)}>
           <Form.Item
@@ -167,10 +171,10 @@ export default function LabOrdersPage() {
             label="Result"
             rules={[{ required: true, message: "Enter the result" }]}
           >
-            <Input.TextArea rows={4} autoFocus />
+            <Input.TextArea rows={4} autoFocus disabled={!canWrite} />
           </Form.Item>
           <Form.Item name="reference_range" label="Reference range (optional)">
-            <Input placeholder="e.g. 4-11 x10^9/L" />
+            <Input placeholder="e.g. 4-11 x10^9/L" disabled={!canWrite} />
           </Form.Item>
         </Form>
       </Modal>

@@ -15,6 +15,7 @@ import {
 } from "./pharmacyApi";
 import NewMedicineForm from "./NewMedicineForm";
 import ReceiveStockModal from "./ReceiveStockModal";
+import { useCan } from "./useCan";
 
 type ViewMode = "all" | "low-stock" | "expiring";
 
@@ -48,6 +49,9 @@ export default function MedicinesPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("all");
   const [addOpen, setAddOpen] = useState(false);
   const [receiveFor, setReceiveFor] = useState<{ id: number; name: string } | null>(null);
+  const canDispense = useCan("pharmacy:dispense");
+  const canMaster = useCan("pharmacy:master");
+  const canPurchase = useCan("pharmacy:purchase");
 
   const { data: medicinesData, isLoading: medicinesLoading } = useQuery({
     queryKey: ["pharmacy", "medicines"],
@@ -86,10 +90,10 @@ export default function MedicinesPage() {
             ]}
           />
           <Space>
-            <Button icon={<InboxOutlined />} onClick={() => navigate("/pharmacy/dispense")}>
+            <Button icon={<InboxOutlined />} disabled={!canDispense} onClick={() => navigate("/pharmacy/dispense")}>
               Dispense
             </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>
+            <Button type="primary" icon={<PlusOutlined />} disabled={!canMaster} onClick={() => setAddOpen(true)}>
               Add Medicine
             </Button>
           </Space>
@@ -126,6 +130,7 @@ export default function MedicinesPage() {
                   <Button
                     type="text"
                     size="small"
+                    disabled={!canPurchase}
                     onClick={() => setReceiveFor({ id: record.medicine_id, name: record.name })}
                   >
                     Receive Stock

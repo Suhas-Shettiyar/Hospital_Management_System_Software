@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { me } from "./opdApi";
+import { me } from "./appointmentsApi";
 
 /**
  * Local equivalent of the web-shell host's useCan(). This remote can't
@@ -14,7 +14,7 @@ import { me } from "./opdApi";
  */
 export function useCan(permission: string): boolean {
   const { data } = useQuery({
-    queryKey: ["opd", "auth", "me"],
+    queryKey: ["appointments", "auth", "me"],
     queryFn: () => me(),
     staleTime: 5 * 60 * 1000,
   });

@@ -18,22 +18,24 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "vitals:write",
         "lab:read", "lab:write",
         "pharmacy:read", "pharmacy:dispense", "pharmacy:purchase", "pharmacy:master", "pharmacy:returns",
-        "billing:read", "billing:collect",
+        "billing:read", "billing:write", "billing:collect",
+        "ipd:read", "ipd:write",
         "reports:view",
         "admin:users",
     },
     UserRole.FRONTDESK: {
         "patients:read", "patients:write",
         "queue:read", "queue:write",
-        "billing:read",
+        "billing:read", "billing:write",
     },
     UserRole.DOCTOR: {
         "patients:read",
         "queue:read", "queue:write",
         "consultation:read", "consultation:write",
         "vitals:write",
-        "lab:read",
+        "lab:read", "lab:write",
         "pharmacy:read",
+        "ipd:read", "ipd:write",
         "reports:view",
     },
     UserRole.NURSE: {
@@ -41,6 +43,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "queue:read",
         "consultation:read",
         "vitals:write",
+        "ipd:read",
     },
     UserRole.LAB: {
         "patients:read",
@@ -56,7 +59,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     UserRole.CASHIER: {
         "patients:read",
         "pharmacy:read",
-        "billing:read", "billing:collect",
+        "billing:read", "billing:write", "billing:collect",
         "reports:view",
     },
 }

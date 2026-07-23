@@ -25,3 +25,8 @@ declare module "appointments_remote/module" {
   import type { HmsModule } from "./app/moduleRegistry";
   export const appointmentsModule: HmsModule;
 }
+
+declare module "ipd_remote/module" {
+  import type { HmsModule } from "./app/moduleRegistry";
+  export const ipdModule: HmsModule;
+}

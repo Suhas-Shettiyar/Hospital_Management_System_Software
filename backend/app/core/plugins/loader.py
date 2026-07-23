@@ -28,6 +28,7 @@ KNOWN_PACKAGE_MODULES: list[str] = [
     "app.modules.lab.plugin",
     "app.modules.pharmacy.plugin",
     "app.modules.appointments.plugin",
+    "app.modules.ipd.plugin",
 ]
 
 

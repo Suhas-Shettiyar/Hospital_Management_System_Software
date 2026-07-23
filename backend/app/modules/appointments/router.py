@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.audit.service import record_audit
-from app.core.auth.dependencies import get_current_user
+from app.core.auth.dependencies import require
 from app.core.auth.models import User, UserRole, UserStatus
 from app.core.auth.schemas import UserOut
 from app.core.patients.models import Patient
@@ -34,7 +34,7 @@ def _client_ip(request: Request) -> str | None:
 @router.get("/doctors", response_model=list[UserOut])
 def list_doctors(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("queue:read")),
 ):
     return (
         db.query(User)
@@ -49,7 +49,7 @@ def book_appointment(
     payload: AppointmentCreate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("queue:write")),
 ):
     if db.get(Patient, payload.patient_id) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
@@ -90,7 +90,7 @@ def list_appointments(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("queue:read")),
 ):
     query = db.query(Appointment)
     if patient_id is not None:
@@ -114,7 +114,7 @@ def list_appointments(
 def get_appointment(
     appointment_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("queue:read")),
 ):
     appointment = db.get(Appointment, appointment_id)
     if appointment is None:
@@ -164,7 +164,7 @@ def check_in(
     appointment_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("queue:write")),
 ):
     return _transition(
         db, request, current_user, appointment_id,
@@ -180,7 +180,7 @@ def complete(
     appointment_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("queue:write")),
 ):
     return _transition(
         db, request, current_user, appointment_id,
@@ -195,7 +195,7 @@ def cancel(
     appointment_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("queue:write")),
 ):
     return _transition(
         db, request, current_user, appointment_id,
@@ -210,7 +210,7 @@ def no_show(
     appointment_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require("queue:write")),
 ):
     return _transition(
         db, request, current_user, appointment_id,
