@@ -14,6 +14,21 @@ Every session should start by reading the latest entries here, and end by adding
 
 ## Log
 
+### 2026-07-16 (later still) — Task 7: Phase 1 committed and pushed
+Reviewed the full `git status` before staging — confirmed both `backend/.env` and `infra/.env` correctly appear under Git's *ignored* list (not staged). Staged 22 files (skeleton folders from Task 3, updated `config.py`/`main.py`/`requirements.txt` from Tasks 4/6, `infra/docker-compose.yml` + `.env.example` from Task 5, updated README/chat log). Also noticed and included `project-docs/MedCore_HMS_Tech_Stack.pdf`, which had been added to that folder outside of this session.
+
+Committed as `1261410`: "Phase 1: project skeleton, docker services, hello-world API". Pushed to `origin/main` (fast-forward from `d33568d`).
+
+**Phase 1 (project foundation) is now fully done and live on GitHub.** Summary of where things stand:
+- Repo: https://github.com/Thejashwini005/Hospital-Management-System, branch `main`, local copy at `D:\HMS software`
+- Backend runs via `backend/.venv`, connects to Docker Postgres on **port 5433** (not 5432 — native Postgres already used that port on this machine)
+- Docker Compose (`infra/docker-compose.yml`): Postgres 16 (port 5433) + Valkey 8 (port 6379), both healthy, named volumes for persistence
+- Backend verified: `/`, `/health` (new, real DB check), `/api/health` (partner's, untouched) all working
+- Frontend already scaffolded by partner (Vite+React+TS+AntD+TanStack Query) — not modified this session
+- **Open item, needs partner discussion:** auth library choice — her `fastapi-users` vs. the brief's custom JWT (python-jose+argon2-cffi). Both libraries are installed; neither is wired into any code yet. Decision intentionally left open (see `docs/decisions/001-choices.md` note).
+
+---
+
 ### 2026-07-16 (later) — Task 6: hello-world backend verified working
 Extended (not replaced) partner's existing `main.py`/`config.py`/`database.py`:
 - `config.py`: added `enabled_modules` setting (default `"opd,appointments,lab,pharmacy,ipd"`, comma-separated from `.env`) + `enabled_modules_list` property — same pattern as her existing `cors_origins_list`. Also updated the fallback `database_url` default to the correct port 5433/user `hms` for consistency (real value still comes from `.env`).
